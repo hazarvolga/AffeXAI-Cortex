@@ -1,0 +1,12 @@
+psql_binary_path: ''
+host: 127.0.0.1
+port: '5432'
+user: ''
+password: $POSTGRES_PASSWORD
+database: ''
+available:
+  on_your_laptop: false
+  when_isolated: false
+confirmation:
+  ask_user: []
+  deny: []

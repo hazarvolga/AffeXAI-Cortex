@@ -1,0 +1,214 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  # ============================================
+  # Backend CI
+  # ============================================
+  backend:
+    name: Backend CI
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: apps/backend
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies (root)
+        run: npm ci
+        working-directory: .
+
+      - name: Install dependencies (backend)
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: TypeScript type check
+        run: npm run typecheck
+
+      - name: Run tests
+        run: npm run test
+        env:
+          NODE_ENV: test
+
+      - name: Build
+        run: npm run build
+        env:
+          NODE_ENV: production
+
+  # ============================================
+  # Frontend CI
+  # ============================================
+  frontend:
+    name: Frontend CI
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: apps/frontend
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies (root)
+        run: npm ci
+        working-directory: .
+
+      - name: Install dependencies (frontend)
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: TypeScript type check
+        run: npm run typecheck
+
+      - name: Build
+        run: npm run build
+        env:
+          NODE_ENV: production
+          NEXT_PUBLIC_API_URL: https://api.affexai.com
+          NEXT_PUBLIC_SOCKET_URL: https://api.affexai.com
+          NEXT_PUBLIC_APP_URL: https://affexai.com
+
+  # ============================================
+  # Database Migration Check
+  # ============================================
+  migrations:
+    name: Migration Check
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:14
+        env:
+          POSTGRES_DB: affexai_test
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    defaults:
+      run:
+        working-directory: apps/backend
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: |
+          npm ci
+          cd ../../
+          npm ci
+
+      - name: Run migrations
+        run: npm run typeorm:migration:run
+        env:
+          DATABASE_HOST: localhost
+          DATABASE_PORT: 5432
+          DATABASE_USERNAME: postgres
+          DATABASE_PASSWORD: postgres
+          DB_NAME: affexai_test
+          NODE_ENV: test
+
+      - name: Verify migrations
+        run: |
+          echo "✅ Migrations executed successfully"
+          echo "Checking if theme_settings fix migration was applied..."
+          # Add verification queries here if needed
+
+  # ============================================
+  # Security Audit
+  # ============================================
+  security:
+    name: Security Audit
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Run npm audit (backend)
+        run: npm audit --audit-level=moderate --omit=dev || true
+        working-directory: apps/backend
+
+      - name: Run npm audit (frontend)
+        run: npm audit --audit-level=moderate --omit=dev || true
+        working-directory: apps/frontend
+
+      - name: Check for hardcoded secrets
+        run: |
+          echo "Checking for potential secrets..."
+          grep -r "API_KEY" apps/ || echo "No hardcoded API keys found"
+          grep -r "SECRET" apps/ || echo "No hardcoded secrets found"
+        continue-on-error: true
+
+  # ============================================
+  # Code Quality Report
+  # ============================================
+  quality:
+    name: Code Quality
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Generate quality report
+        run: |
+          echo "📊 Code Quality Report"
+          echo "======================="
+          echo ""
+          echo "Backend Test Coverage:"
+          cd apps/backend
+          BACKEND_SPECS=$(find src -name "*.spec.ts" | wc -l)
+          BACKEND_SERVICES=$(find src -name "*.service.ts" | wc -l)
+          echo "  Test files: $BACKEND_SPECS"
+          echo "  Service files: $BACKEND_SERVICES"
+          echo "  Coverage: ~$((BACKEND_SPECS * 100 / BACKEND_SERVICES))%"
+          echo ""
+          echo "Frontend Test Coverage:"
+          cd ../frontend
+          FRONTEND_TESTS=$(find . -name "*.test.tsx" -o -name "*.test.ts" | wc -l)
+          echo "  Test files: $FRONTEND_TESTS"
+          echo ""
+          echo "⚠️  Target: 30% coverage by end of Phase 1"

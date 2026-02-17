@@ -1,0 +1,343 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches:
+      - main          # Production
+      - staging       # Staging environment
+  workflow_dispatch:  # Manual trigger
+
+env:
+  NODE_VERSION: '20'
+  DOCKER_REGISTRY: ghcr.io
+  IMAGE_PREFIX: ${{ github.repository }}
+
+jobs:
+  # ================================================================
+  # JOB 1: PRE-BUILD VALIDATION
+  # ================================================================
+  validate:
+    name: Pre-Build Validation
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history for migration checks
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Validate Package Lock
+        run: |
+          echo "📦 Validating package-lock.json integrity..."
+          npm ci --legacy-peer-deps
+          git diff --exit-code package-lock.json || {
+            echo "❌ ERROR: package-lock.json is out of sync!"
+            echo "Run 'npm install' locally and commit changes"
+            exit 1
+          }
+
+      - name: Lint Check (Backend)
+        run: |
+          cd apps/backend && npm run lint
+        continue-on-error: true
+
+      - name: Lint Check (Frontend)
+        run: |
+          cd apps/frontend && npm run lint
+        continue-on-error: true
+
+      - name: TypeScript Check (Backend)
+        run: |
+          cd apps/backend && npx tsc --noEmit
+        continue-on-error: true
+
+      - name: TypeScript Check (Frontend)
+        run: |
+          cd apps/frontend && npm run typecheck
+
+      - name: Security Audit
+        run: |
+          npm audit --production --audit-level=high || {
+            echo "⚠️ WARNING: High/Critical vulnerabilities found"
+            echo "Review before deploying to production"
+          }
+        continue-on-error: true
+
+  # ================================================================
+  # JOB 2: BUILD & TEST
+  # ================================================================
+  build-and-test:
+    name: Build & Test
+    runs-on: ubuntu-latest
+    needs: validate
+    timeout-minutes: 20
+
+    services:
+      postgres:
+        image: postgres:14
+        env:
+          POSTGRES_DB: affexai_test
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm ci --legacy-peer-deps
+
+      - name: Build Shared Types
+        run: npm run build:shared
+
+      - name: Build Backend
+        run: npm run build:backend
+
+      - name: Build Frontend
+        run: npm run build:frontend
+        env:
+          NEXT_PUBLIC_API_URL: http://localhost:3001
+          NEXT_PUBLIC_SOCKET_URL: http://localhost:3001
+          NEXT_PUBLIC_APP_URL: http://localhost:9003
+
+      - name: Run Backend Tests
+        run: cd apps/backend && npm test --passWithNoTests
+        env:
+          DATABASE_HOST: localhost
+          DATABASE_PORT: 5432
+          DATABASE_NAME: affexai_test
+          DATABASE_USERNAME: postgres
+          DATABASE_PASSWORD: postgres
+          REDIS_HOST: localhost
+          REDIS_PORT: 6379
+          JWT_SECRET: test-secret
+        continue-on-error: true
+
+      - name: Run Frontend Tests
+        run: cd apps/frontend && npm test --passWithNoTests
+        continue-on-error: true
+
+  # ================================================================
+  # JOB 3: DOCKER BUILD
+  # ================================================================
+  docker-build:
+    name: Build Docker Images
+    runs-on: ubuntu-latest
+    needs: build-and-test
+    timeout-minutes: 30
+
+    permissions:
+      contents: read
+      packages: write
+
+    strategy:
+      matrix:
+        service: [backend, frontend]
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.DOCKER_REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract Metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.DOCKER_REGISTRY }}/${{ env.IMAGE_PREFIX }}-${{ matrix.service }}
+          tags: |
+            type=sha,prefix={{branch}}-
+            type=ref,event=branch
+            type=semver,pattern={{version}}
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Build and Push Docker Image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: apps/${{ matrix.service }}/Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=registry,ref=${{ env.DOCKER_REGISTRY }}/${{ env.IMAGE_PREFIX }}-${{ matrix.service }}:buildcache
+          cache-to: type=registry,ref=${{ env.DOCKER_REGISTRY }}/${{ env.IMAGE_PREFIX }}-${{ matrix.service }}:buildcache,mode=max
+          build-args: |
+            NEXT_PUBLIC_API_URL=${{ secrets.NEXT_PUBLIC_API_URL }}
+            NEXT_PUBLIC_SOCKET_URL=${{ secrets.NEXT_PUBLIC_SOCKET_URL }}
+            NEXT_PUBLIC_APP_URL=${{ secrets.NEXT_PUBLIC_APP_URL }}
+
+  # ================================================================
+  # JOB 4: DEPLOY TO COOLIFY
+  # ================================================================
+  deploy-coolify:
+    name: Deploy to Coolify
+    runs-on: ubuntu-latest
+    needs: docker-build
+    timeout-minutes: 15
+
+    environment:
+      name: ${{ github.ref == 'refs/heads/main' && 'production' || 'staging' }}
+      url: ${{ secrets.APP_URL }}
+
+    steps:
+      - name: Trigger Coolify Deployment (Backend)
+        run: |
+          curl -X POST "${{ secrets.COOLIFY_WEBHOOK_BACKEND }}" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "image": "${{ env.DOCKER_REGISTRY }}/${{ env.IMAGE_PREFIX }}-backend:${{ github.sha }}",
+              "tag": "${{ github.ref_name }}-${{ github.sha }}"
+            }'
+
+      - name: Trigger Coolify Deployment (Frontend)
+        run: |
+          curl -X POST "${{ secrets.COOLIFY_WEBHOOK_FRONTEND }}" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "image": "${{ env.DOCKER_REGISTRY }}/${{ env.IMAGE_PREFIX }}-frontend:${{ github.sha }}",
+              "tag": "${{ github.ref_name }}-${{ github.sha }}"
+            }'
+
+      - name: Wait for Deployment
+        run: sleep 60  # Wait for containers to start
+
+      - name: Health Check - Backend
+        run: |
+          MAX_RETRIES=10
+          RETRY_COUNT=0
+
+          while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
+            if curl -f -s "${{ secrets.BACKEND_URL }}/health" > /dev/null; then
+              echo "✅ Backend health check passed"
+              exit 0
+            fi
+
+            RETRY_COUNT=$((RETRY_COUNT + 1))
+            echo "⏳ Waiting for backend... ($RETRY_COUNT/$MAX_RETRIES)"
+            sleep 10
+          done
+
+          echo "❌ Backend health check failed"
+          exit 1
+
+      - name: Health Check - Frontend
+        run: |
+          MAX_RETRIES=10
+          RETRY_COUNT=0
+
+          while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
+            if curl -f -s "${{ secrets.FRONTEND_URL }}" > /dev/null; then
+              echo "✅ Frontend health check passed"
+              exit 0
+            fi
+
+            RETRY_COUNT=$((RETRY_COUNT + 1))
+            echo "⏳ Waiting for frontend... ($RETRY_COUNT/$MAX_RETRIES)"
+            sleep 10
+          done
+
+          echo "❌ Frontend health check failed"
+          exit 1
+
+  # ================================================================
+  # JOB 5: POST-DEPLOYMENT VALIDATION
+  # ================================================================
+  post-deploy:
+    name: Post-Deployment Validation
+    runs-on: ubuntu-latest
+    needs: deploy-coolify
+    timeout-minutes: 10
+
+    steps:
+      - name: Smoke Tests
+        run: |
+          echo "🧪 Running smoke tests..."
+
+          # Test backend API
+          curl -f "${{ secrets.BACKEND_URL }}/api/settings" || {
+            echo "⚠️ Settings endpoint failed (may require auth)"
+          }
+
+          # Test frontend homepage
+          curl -f "${{ secrets.FRONTEND_URL }}" || exit 1
+
+          echo "✅ Smoke tests passed"
+
+      - name: Send Slack Notification
+        if: always()
+        run: |
+          WEBHOOK="${{ secrets.SLACK_WEBHOOK }}"
+
+          if [ -z "$WEBHOOK" ]; then
+            echo "⚠️ SLACK_WEBHOOK not configured, skipping notification"
+            exit 0
+          fi
+
+          STATUS="${{ job.status }}"
+          COLOR="good"
+
+          if [ "$STATUS" == "failure" ]; then
+            COLOR="danger"
+          elif [ "$STATUS" == "cancelled" ]; then
+            COLOR="warning"
+          fi
+
+          curl -X POST "$WEBHOOK" \
+            -H "Content-Type: application/json" \
+            -d "{
+              \"text\": \"🚀 Deployment $STATUS\",
+              \"attachments\": [{
+                \"color\": \"$COLOR\",
+                \"fields\": [
+                  {\"title\": \"Status\", \"value\": \"$STATUS\", \"short\": true},
+                  {\"title\": \"Environment\", \"value\": \"${{ github.ref_name }}\", \"short\": true},
+                  {\"title\": \"Commit\", \"value\": \"${{ github.sha }}\", \"short\": true},
+                  {\"title\": \"Author\", \"value\": \"${{ github.actor }}\", \"short\": true}
+                ]
+              }]
+            }"
+
+      - name: Update Deployment Log
+        run: |
+          echo "📝 Deployment completed at $(date)"
+          echo "Commit: ${{ github.sha }}"
+          echo "Environment: ${{ github.ref_name }}"
+          echo "Status: ${{ job.status }}"

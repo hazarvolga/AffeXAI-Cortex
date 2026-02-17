@@ -1,0 +1,11 @@
+fastapi
+uvicorn
+qdrant-client
+langchain
+langchain-community
+langchain-ollama
+pydantic
+python-dotenv
+requests
+sentence-transformers
+numpy<2.0.0
