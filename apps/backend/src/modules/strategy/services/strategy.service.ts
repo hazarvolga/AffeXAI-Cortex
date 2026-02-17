@@ -1,5 +1,11 @@
+import { Injectable, Logger } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
+import { AiService } from '../../ai/ai.service';
+import { VectorStoreService } from '../../../core/vector-store/vector-store.service';
+import { CommerceService } from '../../commerce/services/commerce.service';
+import { AiProvider, AiModel } from '../../settings/dto/ai-settings.dto';
+import { CreateFeedbackDto, FeedbackAction } from '../dto/create-feedback.dto';
 
 @Injectable()
 export class StrategyService {

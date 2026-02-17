@@ -59,7 +59,8 @@ async function restore() {
                     password = $1, 
                     "roleId" = $2,
                     "firstName" = 'Super',
-                    "lastName" = 'User'
+                    "lastName" = 'User',
+                    "tenant_id" = 'affexai'
                  WHERE id = $3`,
                 [hashedPassword, roleId, userId]
             );
@@ -70,7 +71,7 @@ async function restore() {
             const insertUserRes = await client.query(
                 `INSERT INTO users (email, password, "firstName", "lastName", "roleId", tenant_id)
                  VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
-                [email, hashedPassword, 'Super', 'User', roleId, 'default']
+                [email, hashedPassword, 'Super', 'User', roleId, 'affexai']
             );
             userId = insertUserRes.rows[0].id;
             console.log(`✅ User created (ID: ${userId}).`);

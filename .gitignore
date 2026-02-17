@@ -106,10 +106,19 @@ claudedocs/
 # Temporary dev logs
 /tmp/affexai-*.log
 
-# Oracle Server SSH Keys (private)
-AffexAI-Oracle-Servers/
+# Oracle Server Keys & Sensitive Data
+Oracle Sunucuları/
+AffeXAI-Oracle-Servers/
 *.key
 *.pem
+quarantine/
+tsconfig.tsbuildinfo
+
+# AI & Agent Artifacts
+.agent/
+.serena/
+.refact/
+.playwright-mcp/
 
 # Security & Credentials
 *.pfx
