@@ -7,6 +7,7 @@ import { toast } from 'sonner';
 import { BccEditorialWrapper } from '@/components/brand/BccEditorialWrapper';
 import { BccHudTile } from '@/components/brand/BccHudTile';
 import { SocialModuleNav } from '@/components/admin/social/SocialModuleNav';
+import { SocialConnectModal } from '@/components/admin/social/SocialConnectModal';
 import { Button } from '@/components/ui/button';
 import { Twitter, Linkedin, Instagram, Facebook, Globe, CheckCircle2, AlertCircle, Plus, Loader2, Trash2, Building2, User as UserIcon } from 'lucide-react';
 
@@ -17,10 +18,18 @@ const PROVIDERS = [
     { id: 'linkedin', name: 'LinkedIn', icon: Linkedin, color: 'text-blue-700' },
 ];
 
+interface ProviderDef {
+    id: string;
+    name: string;
+    icon: any;
+    color: string;
+}
+
 export default function SocialMediaAccounts() {
     const [accounts, setAccounts] = useState<SocialAccount[]>([]);
     const [loading, setLoading] = useState(true);
-    const [connecting, setConnecting] = useState<string | null>(null);
+    const [connecting, setConnecting] = useState<string | null>(null); // For callback processing
+    const [selectedProvider, setSelectedProvider] = useState<ProviderDef | null>(null); // For Modal
 
     const searchParams = useSearchParams();
     const router = useRouter();
@@ -36,6 +45,7 @@ export default function SocialMediaAccounts() {
 
         if (code && pendingProvider) {
             try {
+                toast.loading('Finalizing connection...', { id: 'connect-loading' });
                 setConnecting(pendingProvider);
                 sessionStorage.removeItem('pending_social_provider');
 
@@ -47,12 +57,17 @@ export default function SocialMediaAccounts() {
                     redirectUri: currentUrl
                 });
 
+                toast.dismiss('connect-loading');
                 toast.success(`Connected to ${pendingProvider.toUpperCase()}`);
+
                 await loadAccounts();
+
+                // Clear URL params without full reload
                 router.replace(window.location.pathname);
-            } catch (error) {
+            } catch (error: any) {
                 console.error('Connection failed:', error);
-                toast.error('Failed to connect account.');
+                toast.dismiss('connect-loading');
+                toast.error(`Connection failed: ${error.message || 'Unknown error'}`);
             } finally {
                 setConnecting(null);
             }
@@ -63,8 +78,13 @@ export default function SocialMediaAccounts() {
         try {
             setLoading(true);
             const data = await socialMediaService.getAccounts();
-            if (Array.isArray(data)) {
-                setAccounts(data);
+
+            // Check if data is wrapped in 'data' property (NestJS common pattern)
+            // @ts-ignore
+            const items = Array.isArray(data) ? data : (data?.data || []);
+
+            if (Array.isArray(items)) {
+                setAccounts(items);
             } else {
                 setAccounts([]);
             }
@@ -76,18 +96,8 @@ export default function SocialMediaAccounts() {
         }
     };
 
-    const handleConnect = async (provider: string) => {
-        try {
-            setConnecting(provider);
-            const redirectUri = window.location.origin + window.location.pathname;
-            const { url } = await socialMediaService.getAuthUrl(provider, redirectUri);
-            sessionStorage.setItem('pending_social_provider', provider);
-            window.location.href = url;
-        } catch (error) {
-            console.error('Failed to initiate auth:', error);
-            toast.error('Could not initiate connection');
-            setConnecting(null);
-        }
+    const handleConnectClick = (provider: ProviderDef) => {
+        setSelectedProvider(provider);
     };
 
     const handleDisconnect = async (accountId: string) => {
@@ -169,7 +179,7 @@ export default function SocialMediaAccounts() {
 
                                         <div>
                                             <Button
-                                                onClick={() => handleConnect(provider.id)}
+                                                onClick={() => handleConnectClick(provider)}
                                                 variant="outline"
                                                 disabled={!!connecting}
                                                 className="w-full h-8 bg-white/5 border-white/10 text-white hover:bg-[#ff8c00]/10 hover:text-[#ff8c00] hover:border-[#ff8c00]/30 text-[10px] uppercase tracking-widest rounded-none"
@@ -266,6 +276,15 @@ export default function SocialMediaAccounts() {
                     </BccHudTile>
                 )}
             </div>
+
+            {selectedProvider && (
+                <SocialConnectModal
+                    open={!!selectedProvider}
+                    onOpenChange={(open) => !open && setSelectedProvider(null)}
+                    providerId={selectedProvider.id}
+                    providerName={selectedProvider.name}
+                />
+            )}
         </BccEditorialWrapper>
     );
 }

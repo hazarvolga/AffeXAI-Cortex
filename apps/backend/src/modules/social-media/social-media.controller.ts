@@ -20,9 +20,13 @@ export class SocialMediaController {
         @Query('provider') provider: SocialProvider,
         @Query('redirectUri') redirectUri?: string,
     ) {
-        return {
-            url: this.socialMediaService.getAuthUrl(provider, redirectUri),
-        };
+        try {
+            const url = this.socialMediaService.getAuthUrl(provider, redirectUri);
+            return { url };
+        } catch (error) {
+            console.error(`[SocialMediaController] Error generating URL:`, error);
+            throw error;
+        }
     }
 
     @Post('connect')
