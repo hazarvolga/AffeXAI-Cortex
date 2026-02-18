@@ -1,12 +1,14 @@
 import { Controller, Get, Post, Body, UseGuards, Request, Param } from '@nestjs/common';
 import { CommerceService } from '../services/commerce.service';
 import { JwtAuthGuard } from '../../../core/auth/guards/jwt-auth.guard';
+import { Public } from '../../../core/auth/decorators/public.decorator';
 
 @Controller('commerce')
 @UseGuards(JwtAuthGuard)
 export class CommerceController {
     constructor(private readonly commerceService: CommerceService) { }
 
+    @Public()
     @Get('products')
     async getProducts() {
         return this.commerceService.getProducts();

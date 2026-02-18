@@ -29,17 +29,31 @@ export default function PricingPage() {
     }, []);
 
     const handlePurchase = async (product: any) => {
+        // Find the best available price: prefer monthly, then any active price
         const monthlyPrice = product.prices?.find((p: any) => p.interval === 'month' && p.active);
-        if (!monthlyPrice) return;
+        const anyActivePrice = product.prices?.find((p: any) => p.active);
+        const selectedPrice = monthlyPrice || anyActivePrice;
+
+        if (!selectedPrice) {
+            alert('No active pricing available for this product.');
+            return;
+        }
 
         setCheckingOut(product.id);
         try {
-            const { url } = await commerceService.createCheckoutSession(monthlyPrice.stripePriceId || monthlyPrice.id);
+            const priceIdentifier = selectedPrice.stripePriceId || selectedPrice.id;
+            const { url } = await commerceService.createCheckoutSession(priceIdentifier);
             if (url) {
                 window.location.href = url;
             }
         } catch (err: any) {
             console.error('Checkout failed:', err);
+            // If unauthorized, redirect to login with return URL
+            if (err?.response?.status === 401 || err?.response?.status === 403) {
+                const returnUrl = encodeURIComponent('/pricing');
+                window.location.href = `/login?returnUrl=${returnUrl}`;
+                return;
+            }
             alert('Failed to start checkout. Please try again.');
         } finally {
             setCheckingOut(null);
@@ -152,7 +166,7 @@ export default function PricingPage() {
                         <p className="text-red-400 font-mono text-sm">{error}</p>
                     </div>
                 ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-24">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-24">
                         {products.map((product) => (
                             <div key={product.id} className={`
                                 flex flex-col h-full p-8 border hover:bg-[#1a1a1a]/50 transition-colors

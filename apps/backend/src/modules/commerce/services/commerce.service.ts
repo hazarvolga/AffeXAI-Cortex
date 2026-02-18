@@ -55,9 +55,14 @@ export class CommerceService {
         const price = await this.priceRepo.findOne({ where: { id: priceId } });
         if (!price) throw new NotFoundException('Price not found');
 
-        // TODO: Get frontend URL from config
-        const successUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/commerce/success`;
-        const cancelUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/commerce/cancel`;
+        // FRONTEND_URL must be set in .env — never hardcode a port here
+        const frontendUrl = process.env.FRONTEND_URL;
+        if (!frontendUrl) {
+            this.logger.warn('FRONTEND_URL is not set in environment. Checkout redirect URLs will be broken.');
+        }
+        const base = frontendUrl || '';
+        const successUrl = `${base}/pricing?checkout=success`;
+        const cancelUrl = `${base}/pricing?checkout=cancel`;
 
         const session = await this.stripeProvider.createCheckoutSession(
             price.stripePriceId, // Assuming Price entity has this, if not we need to map or use priceId if it IS the stripe id

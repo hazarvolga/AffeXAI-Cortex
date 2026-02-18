@@ -29,11 +29,6 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
                     <span className="text-[9px] uppercase tracking-widest text-white/40 ml-1">/ANNUM</span>
                 </div>
             }
-            footer={
-                <button className="w-full bg-white/5 hover:bg-white/10 text-white text-[10px] font-bold uppercase tracking-widest py-2 rounded transition-colors border border-white/5 hover:border-white/10">
-                    CONFIGURE_CONFIG
-                </button>
-            }
         >
             <div className="space-y-6">
                 {/* Metric Strip */}
