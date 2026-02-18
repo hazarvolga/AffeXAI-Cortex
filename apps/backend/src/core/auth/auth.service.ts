@@ -20,11 +20,18 @@ export class AuthService {
   ) { }
 
   async validateUser(email: string, password: string): Promise<any> {
-    // Try scoped lookup first, then fallback to global for admins/cross-tenant login
-    let user = await this.usersService.findByEmail(email);
-    if (!user) {
-      user = await this.usersService.findByEmail(email, undefined, false, true);
-    }
+    // FORCE global lookup immediately to bypass tenant context issues during login
+    // This ensures we find the user regardless of the current request context (e.g. 'default' vs 'affexai')
+    console.log(`🔐 AuthService.validateUser(${email}) starting lookup (isGlobal=true)...`);
+
+    // We pass isGlobal=true (4th arg) to ignore active tenant context
+    const user = await this.usersService.findByEmail(email, undefined, true, true);
+
+    console.log(`🔐 AuthService.validateUser(${email}) result:`, {
+      found: !!user,
+      userId: user?.id,
+      userTenantId: user?.tenantId
+    });
     if (user && await this.authUtilsService.comparePassword(password, user.password)) {
       const { password, ...result } = user;
       return result;
@@ -41,7 +48,20 @@ export class AuthService {
     // CRITICAL: Fetch user with userRoles relation for frontend response
     // validateUser doesn't load relations, so we need to fetch again with full data
     // UsersService.findOne now automatically loads organization relation
-    const fullUser = await this.usersService.findOne(user.id, user.tenantId);
+
+    console.log('🔐 AuthService.login: User Validated', {
+      id: user.id,
+      email: user.email,
+      tenantId: user.tenantId,
+      typeOfTenantId: typeof user.tenantId
+    });
+
+    // START FIX: Use the user object from validateUser directly
+    // validateUser (via findByEmail) now includes all necessary relations (roles, organization)
+    // accessible via global fallback if needed. Re-fetching via findOne causes 404
+    // if the socket/request context is 'default' but user is 'affexai'.
+    const fullUser = user as unknown as any;
+    // END FIX
 
     // JWT Payload Strategy: Minimal data to avoid stale role/permission issues
     // Role information is fetched fresh from DB on each request via JWT strategy
@@ -70,7 +90,7 @@ export class AuthService {
       refreshToken,
       refreshTokenExpires,
       lastLoginAt: new Date(),
-    });
+    }, fullUser.tenantId, true); // Force global update to bypass tenant context
 
     // Return user info for initial frontend state (NOT in JWT)
     // Include role information for immediate UI rendering
@@ -176,7 +196,7 @@ export class AuthService {
       await this.usersService.updateUser(user.id, {
         refreshToken: newRefreshToken,
         refreshTokenExpires,
-      });
+      }, user.tenantId);
 
       return {
         access_token: newAccessToken,
@@ -209,6 +229,10 @@ export class AuthService {
       emailVerificationToken: token,
       emailVerificationExpires: expires,
     });
+    // Note: userId is usually enough here as we are just setting a token, but if we had tenantId available we should pass it. 
+    // However, createEmailVerificationToken doesn't take tenantId currently and it's less critical than login/refresh.
+    // Leaving as is for now to minimize scope, or could add it if we want to be thorough. 
+    // Actually, let's leave it as is for this targeted fix as we don't have tenantId passed into this method.
 
     return token;
   }

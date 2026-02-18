@@ -34,6 +34,8 @@ cd "$(dirname "$0")/.."
 
 # 4. NestJS'i başlat
 echo -e "${GREEN}🚀 Starting NestJS...${NC}"
+# Prevent ENOTEMPTY errors by cleaning build artifacts
+rm -rf dist
 npm run start:dev
 
 # Script sonlandığında cleanup yap

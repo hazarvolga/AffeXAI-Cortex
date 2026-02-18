@@ -271,6 +271,13 @@ export class UsersService {
       (where as any).tenantId = activeTenantId;
     }
 
+    console.log(`🔍 UsersService.findOne(${id}) context:`, {
+      tenantIdArg: tenantId,
+      isGlobal,
+      resolvedActiveTenantId: activeTenantId,
+      whereClause: where
+    });
+
     const user = await this.usersRepository.findOne({
       where,
       relations: ['roleEntity', 'userRoles', 'userRoles.role', 'organization'], // Include both legacy and new role relations + organization
@@ -304,6 +311,14 @@ export class UsersService {
   async findByEmail(email: string, tenantId?: string, skipCache = false, isGlobal = false): Promise<User | null> {
     const activeTenantId = isGlobal ? undefined : (tenantId || this.tenantService.getTenantId());
 
+    console.log(`🔍 UsersService.findByEmail(${email}) context:`, {
+      tenantIdArg: tenantId,
+      isGlobal,
+      resolvedActiveTenantId: activeTenantId,
+      skipCache
+    });
+
+
     // Skip cache for critical operations like user registration
     if (!skipCache) {
       const cached = await this.cacheService.get<User>(`users:email:${email}`);
@@ -319,12 +334,14 @@ export class UsersService {
     const where: FindOptionsWhere<User> = { email } as any;
     if (activeTenantId) (where as any).tenantId = activeTenantId;
 
+    console.log(`🔍 UsersService.findByEmail(${email}) Query WHERE:`, where);
+
     // Important: Only find users that are NOT soft-deleted
     // TypeORM automatically excludes soft-deleted records when using findOne
     // But we need to be explicit for clarity
     const user = await this.usersRepository.findOne({
       where,
-      relations: ['roleEntity', 'userRoles', 'userRoles.role'], // Include role information for permission checks
+      relations: ['roleEntity', 'userRoles', 'userRoles.role', 'organization'], // Include role and organization information for permission checks
       withDeleted: false, // Explicitly exclude soft-deleted users
     });
 
@@ -346,9 +363,11 @@ export class UsersService {
     });
   }
 
-  async update(id: string, updateUserDto: UpdateUserDto, tenantId?: string): Promise<User> {
-    const activeTenantId = tenantId || this.tenantService.getTenantId();
-    const user = await this.findOne(id, activeTenantId);
+  async update(id: string, updateUserDto: UpdateUserDto, tenantId?: string, isGlobal = false): Promise<User> {
+    const activeTenantId = isGlobal ? undefined : (tenantId || this.tenantService.getTenantId());
+
+    // Pass isGlobal to findOne to bypass tenant check if needed
+    const user = await this.findOne(id, activeTenantId, isGlobal);
 
     // Check if email is being changed and if it's already taken
     if (updateUserDto.email && updateUserDto.email !== user.email) {
@@ -427,12 +446,12 @@ export class UsersService {
     await this.cacheService.del('users:all');
 
     // Reload user with updated roles
-    return this.findOne(id);
+    return this.findOne(id, activeTenantId, isGlobal);
   }
 
   // Alias for update method (for compatibility)
-  async updateUser(id: string, updateUserDto: UpdateUserDto): Promise<User> {
-    return this.update(id, updateUserDto);
+  async updateUser(id: string, updateUserDto: UpdateUserDto, tenantId?: string, isGlobal = false): Promise<User> {
+    return this.update(id, updateUserDto, tenantId, isGlobal);
   }
 
   async remove(id: string, tenantId?: string): Promise<void> {
