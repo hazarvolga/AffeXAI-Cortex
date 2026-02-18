@@ -15,7 +15,7 @@ const fadeInUp = {
     initial: { opacity: 0, y: 30 },
     whileInView: { opacity: 1, y: 0 },
     viewport: { once: true, margin: "-10%" },
-    transition: { duration: 0.8, ease: [0.16, 1, 0.3, 1] }
+    transition: { duration: 0.8, ease: [0.16, 1, 0.3, 1] as [number, number, number, number] }
 };
 
 export default function MarketingHomePage() {
@@ -29,9 +29,9 @@ export default function MarketingHomePage() {
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4">
                         <div className="w-1 h-1 bg-[#f9f906]"></div>
-                        <h2 className="text-[10px] md:text-xs font-bold tracking-[0.2em] uppercase text-white">
+                        <Link href="/" className="text-[10px] md:text-xs font-bold tracking-[0.2em] uppercase text-white hover:text-[#f9f906] transition-colors">
                             AffeXAI Intelligence
-                        </h2>
+                        </Link>
                     </div>
                     <div className="flex items-center gap-6 md:gap-12">
                         <nav className="hidden md:flex items-center gap-10">

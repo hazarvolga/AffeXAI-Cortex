@@ -37,31 +37,32 @@ export default function FeaturesPage() {
             <div className="flex h-full grow flex-col">
 
                 {/* Navigation Header */}
-                <motion.header
-                    initial={{ opacity: 0, y: -20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 1, delay: 0.2 }}
-                    className="flex items-center justify-between whitespace-nowrap border-b border-solid border-white/5 px-10 py-6 max-w-7xl mx-auto w-full"
-                >
-                    <div className="flex items-center gap-4 text-white">
-                        <div className="size-6 text-[#f9bc06]">
-                            <svg fill="none" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
-                                <path clipRule="evenodd" d="M24 18.4228L42 11.475V34.3663C42 34.7796 41.7457 35.1504 41.3601 35.2992L24 42V18.4228Z" fill="currentColor" fillRule="evenodd"></path>
-                                <path clipRule="evenodd" d="M24 8.18819L33.4123 11.574L24 15.2071L14.5877 11.574L24 8.18819ZM9 15.8487L21 20.4805V37.6263L9 32.9945V15.8487ZM27 37.6263V20.4805L39 15.8487V32.9945L27 37.6263ZM25.354 2.29885C24.4788 1.98402 23.5212 1.98402 22.646 2.29885L4.98454 8.65208C3.7939 9.08038 3 10.2097 3 11.475V34.3663C3 36.0196 4.01719 37.5026 5.55962 38.098L22.9197 44.7987C23.6149 45.0671 24.3851 45.0671 25.0803 44.7987L42.4404 38.098C43.9828 37.5026 45 36.0196 45 34.3663V11.475C45 10.2097 44.2061 9.08038 43.0155 8.65208L25.354 2.29885Z" fill="currentColor" fillRule="evenodd"></path>
-                            </svg>
+                <header className="px-6 lg:px-20 py-8 border-b border-[#1a1a1a]">
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-4">
+                            <div className="w-1 h-1 bg-[#f9f906]"></div>
+                            <Link href="/" className="text-[10px] md:text-xs font-bold tracking-[0.2em] uppercase text-white hover:text-[#f9f906] transition-colors">
+                                AffeXAI Intelligence
+                            </Link>
                         </div>
-                        <Link href="/" className="text-white text-xs font-light tracking-[0.3em] uppercase leading-tight hover:text-[#f9bc06] transition-colors">
-                            System Intelligence Surface
-                        </Link>
-                    </div>
-                    <div className="flex flex-1 justify-end gap-12 text-white/40 text-[10px] font-medium uppercase tracking-[0.2em]">
-                        <div className="flex items-center gap-10">
-                            <Link href="/modules" className="hover:text-white transition-colors">Modules</Link>
-                            <Link href="/architecture" className="hover:text-white transition-colors">Architecture</Link>
-                            <Link href="/" className="hover:text-white transition-colors">Intelligence</Link>
+                        <div className="flex items-center gap-6 md:gap-12">
+                            <nav className="hidden md:flex items-center gap-10">
+                                <Link href="/modules" className="text-[10px] uppercase tracking-widest text-[#666] hover:text-white transition-colors">Modules</Link>
+                                <Link href="/architecture" className="text-[10px] uppercase tracking-widest text-[#666] hover:text-white transition-colors">Architecture</Link>
+                                <Link href="/features" className="text-[10px] uppercase tracking-widest text-[#f9f906]">Features</Link>
+                                <Link href="/pricing" className="text-[10px] uppercase tracking-widest text-[#666] hover:text-white transition-colors">Pricing</Link>
+                            </nav>
+                            <div className="flex gap-4">
+                                <Link href="/login" className="hidden md:flex items-center justify-center bg-[#1a1a1a] border border-[#2a2a2a] text-white text-[10px] font-bold uppercase tracking-widest px-6 h-9 hover:border-[#f9f906]/50 transition-colors">
+                                    Login
+                                </Link>
+                                <Link href="/pricing" className="flex items-center justify-center bg-[#f9f906] text-black text-[10px] font-bold uppercase tracking-widest px-6 h-9 hover:brightness-110 transition-all">
+                                    Request Access
+                                </Link>
+                            </div>
                         </div>
                     </div>
-                </motion.header>
+                </header>
 
                 {/* Hero Section: The Single Line */}
                 <main className="flex-1 flex flex-col items-center justify-center min-h-[80vh] px-10">

@@ -33,23 +33,24 @@ export default function ArchitecturePage() {
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4">
                         <div className="w-1 h-1 bg-[#f9f906]"></div>
-                        <h2 className="text-[10px] md:text-xs font-bold tracking-[0.2em] uppercase text-white">
-                            System Architecture Surface
-                        </h2>
+                        <Link href="/" className="text-[10px] md:text-xs font-bold tracking-[0.2em] uppercase text-white hover:text-[#f9f906] transition-colors">
+                            AffeXAI Intelligence
+                        </Link>
                     </div>
                     <div className="flex items-center gap-6 md:gap-12">
                         <nav className="hidden md:flex items-center gap-10">
                             <Link href="/modules" className="text-[10px] uppercase tracking-widest text-[#666] hover:text-white transition-colors">Modules</Link>
                             <Link href="/architecture" className="text-[10px] uppercase tracking-widest text-[#f9f906]">Architecture</Link>
                             <Link href="/features" className="text-[10px] uppercase tracking-widest text-[#666] hover:text-white transition-colors">Features</Link>
+                            <Link href="/pricing" className="text-[10px] uppercase tracking-widest text-[#666] hover:text-white transition-colors">Pricing</Link>
                         </nav>
                         <div className="flex gap-4">
                             <Link href="/login" className="hidden md:flex items-center justify-center bg-[#1a1a1a] border border-[#2a2a2a] text-white text-[10px] font-bold uppercase tracking-widest px-6 h-9 hover:border-[#f9f906]/50 transition-colors">
                                 Login
                             </Link>
-                            <button className="flex items-center justify-center bg-[#f9f906] text-black text-[10px] font-bold uppercase tracking-widest px-6 h-9 hover:brightness-110 transition-all">
+                            <Link href="/pricing" className="flex items-center justify-center bg-[#f9f906] text-black text-[10px] font-bold uppercase tracking-widest px-6 h-9 hover:brightness-110 transition-all">
                                 Request Access
-                            </button>
+                            </Link>
                         </div>
                     </div>
                 </div>

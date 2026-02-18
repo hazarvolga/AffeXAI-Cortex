@@ -48,26 +48,31 @@ export default function PricingPage() {
 
     return (
         <div className="relative flex h-auto min-h-screen w-full flex-col overflow-x-hidden font-sans">
-            {/* TopNavBar */}
-            <header className="sticky top-0 z-50 flex items-center justify-between border-b border-solid border-[#3a3527] bg-[#0a0a0a]/80 backdrop-blur-md px-6 md:px-20 py-4">
-                <div className="flex items-center gap-4 text-white">
-                    <div className="size-6 text-[#f9bc06]">
-                        <svg fill="none" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M44 4H30.6666V17.3334H17.3334V30.6666H4V44H44V4Z" fill="currentColor"></path>
-                        </svg>
+            {/* Top Navigation Bar */}
+            <header className="sticky top-0 z-50 px-6 lg:px-20 py-8 border-b border-[#1a1a1a] bg-[#0a0a0a]/80 backdrop-blur-md">
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                        <div className="w-1 h-1 bg-[#f9f906]"></div>
+                        <Link href="/" className="text-[10px] md:text-xs font-bold tracking-[0.2em] uppercase text-white hover:text-[#f9f906] transition-colors">
+                            AffeXAI Intelligence
+                        </Link>
                     </div>
-                    <h2 className="text-white text-xl font-bold leading-tight tracking-tighter uppercase">AffeXAI</h2>
-                </div>
-                <div className="flex flex-1 justify-end gap-12 items-center">
-                    <nav className="hidden md:flex items-center gap-10">
-                        <Link href="/architecture" className="text-[#bbb39b] hover:text-white text-xs font-semibold tracking-widest uppercase transition-colors">Architecture</Link>
-                        <Link href="/capability" className="text-[#bbb39b] hover:text-white text-xs font-semibold tracking-widest uppercase transition-colors">Capability</Link>
-                        <Link href="/metrics" className="text-[#bbb39b] hover:text-white text-xs font-semibold tracking-widest uppercase transition-colors">Metrics</Link>
-                        <Link href="/access" className="text-[#bbb39b] hover:text-white text-xs font-semibold tracking-widest uppercase transition-colors">Access</Link>
-                    </nav>
-                    <Link href="/login" className="flex min-w-[180px] cursor-pointer items-center justify-center rounded-sm h-10 px-6 bg-[#f9bc06] text-black text-xs font-bold uppercase tracking-widest transition-all hover:bg-white">
-                        Request Authorization
-                    </Link>
+                    <div className="flex items-center gap-6 md:gap-12">
+                        <nav className="hidden md:flex items-center gap-10">
+                            <Link href="/modules" className="text-[10px] uppercase tracking-widest text-[#666] hover:text-white transition-colors">Modules</Link>
+                            <Link href="/architecture" className="text-[10px] uppercase tracking-widest text-[#666] hover:text-white transition-colors">Architecture</Link>
+                            <Link href="/features" className="text-[10px] uppercase tracking-widest text-[#666] hover:text-white transition-colors">Features</Link>
+                            <Link href="/pricing" className="text-[10px] uppercase tracking-widest text-[#f9f906]">Pricing</Link>
+                        </nav>
+                        <div className="flex gap-4">
+                            <Link href="/login" className="hidden md:flex items-center justify-center bg-[#1a1a1a] border border-[#2a2a2a] text-white text-[10px] font-bold uppercase tracking-widest px-6 h-9 hover:border-[#f9f906]/50 transition-colors">
+                                Login
+                            </Link>
+                            <Link href="/pricing" className="flex items-center justify-center bg-[#f9f906] text-black text-[10px] font-bold uppercase tracking-widest px-6 h-9 hover:brightness-110 transition-all">
+                                Request Access
+                            </Link>
+                        </div>
+                    </div>
                 </div>
             </header>
 
