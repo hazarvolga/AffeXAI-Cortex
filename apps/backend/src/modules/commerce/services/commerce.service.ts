@@ -58,7 +58,7 @@ export class CommerceService {
         // FRONTEND_URL must be set in .env — never hardcode a port here
         const frontendUrl = process.env.FRONTEND_URL;
         if (!frontendUrl) {
-            this.logger.warn('FRONTEND_URL is not set in environment. Checkout redirect URLs will be broken.');
+            console.warn('[CommerceService] FRONTEND_URL is not set in environment. Checkout redirect URLs will be broken.');
         }
         const base = frontendUrl || '';
         const successUrl = `${base}/pricing?checkout=success`;
@@ -317,4 +317,162 @@ export class CommerceService {
             }
         }
     }
+
+    // ─────────────────────────────────────────────
+    // ADMIN / AUDITOR ENDPOINTS
+    // ─────────────────────────────────────────────
+
+    async getRevenueSummary() {
+        const thisMonthStart = new Date();
+        thisMonthStart.setDate(1);
+        thisMonthStart.setHours(0, 0, 0, 0);
+
+        const [activeSubs, recentlyCanceled] = await Promise.all([
+            this.subscriptionRepo.find({
+                where: { status: SubscriptionStatus.ACTIVE },
+                relations: ['price', 'price.product'],
+            }),
+            this.subscriptionRepo.find({
+                where: {
+                    status: SubscriptionStatus.CANCELED,
+                    updatedAt: MoreThan(thisMonthStart),
+                },
+                relations: ['price'],
+            }),
+        ]);
+
+        // MRR: sum of all active subscriptions. Price.amount stored in minor units (cents).
+        const totalMRR = activeSubs.reduce((acc, sub) => {
+            const amount = (sub.price?.amount ?? 0) / 100; // cents → dollars
+            const interval = sub.price?.interval ?? 'month';
+            const monthly = interval === 'year' ? amount / 12 : amount;
+            return acc + monthly;
+        }, 0);
+
+        const estimatedBurn = totalMRR * 0.20;
+        const netMargin = totalMRR > 0 ? ((totalMRR - estimatedBurn) / totalMRR) * 100 : 0;
+
+        const tenants = activeSubs.map(sub => ({
+            tenantId: sub.tenantId,
+            planName: sub.price?.product?.name ?? 'Unknown Plan',
+            status: sub.status,
+            monthlyValue: sub.price?.interval === 'year'
+                ? (sub.price?.amount ?? 0) / 100 / 12
+                : (sub.price?.amount ?? 0) / 100,
+            currentPeriodEnd: sub.currentPeriodEnd,
+            cancelAtPeriodEnd: sub.cancelAtPeriodEnd,
+        }));
+
+        return {
+            totalMRR: Math.round(totalMRR * 100) / 100,
+            estimatedBurn: Math.round(estimatedBurn * 100) / 100,
+            netMargin: Math.round(netMargin * 10) / 10,
+            activeTenantCount: activeSubs.length,
+            churnedThisMonth: recentlyCanceled.length,
+            tenants,
+        };
+    }
+
+    async getAdminInvoices() {
+        try {
+            const stripe = this.stripeProvider.getClient();
+            const invoiceList = await stripe.invoices.list({ limit: 30 });
+            return invoiceList.data.map(inv => ({
+                id: inv.id,
+                number: inv.number,
+                amount: (inv.amount_due ?? 0) / 100,
+                currency: (inv.currency ?? 'usd').toUpperCase(),
+                status: inv.status,
+                created: new Date((inv.created ?? 0) * 1000).toISOString(),
+                dueDate: inv.due_date ? new Date(inv.due_date * 1000).toISOString() : null,
+                customerEmail: inv.customer_email,
+                hostedUrl: inv.hosted_invoice_url,
+            }));
+        } catch (err) {
+            console.error('[CommerceService] getAdminInvoices failed:', err.message);
+            return [];
+        }
+    }
+
+    async getTokenEconomics() {
+        const sixMonthsAgo = new Date();
+        sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+        const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+
+        try {
+            const [monthlyRaw, tenantRaw] = await Promise.all([
+                this.usageRepo.createQueryBuilder('u')
+                    .select([
+                        `TO_CHAR(DATE_TRUNC('month', u.timestamp), 'Mon') as month`,
+                        `DATE_TRUNC('month', u.timestamp) as "monthDate"`,
+                        `COALESCE(SUM(u."tokensUsed"), 0)::int as "totalTokens"`,
+                    ])
+                    .where('u.timestamp >= :since', { since: sixMonthsAgo })
+                    .groupBy(`DATE_TRUNC('month', u.timestamp)`)
+                    .orderBy(`DATE_TRUNC('month', u.timestamp)`, 'ASC')
+                    .getRawMany(),
+
+                this.usageRepo.createQueryBuilder('u')
+                    .select([
+                        'u."tenantId" as "tenantId"',
+                        `COALESCE(SUM(u."tokensUsed"), 0)::int as "totalTokens"`,
+                    ])
+                    .where('u.timestamp >= :since', { since: thirtyDaysAgo })
+                    .groupBy('u."tenantId"')
+                    .orderBy('"totalTokens"', 'DESC')
+                    .limit(10)
+                    .getRawMany(),
+            ]);
+
+            const costPerThousand = 0.002;
+
+            const monthlyUsage = monthlyRaw.map(row => ({
+                month: row.month as string,
+                totalTokens: Number(row.totalTokens),
+                estimatedCost: Math.round((Number(row.totalTokens) / 1000) * costPerThousand * 100) / 100,
+            }));
+
+            const activeSubs = await this.subscriptionRepo.find({
+                where: { status: SubscriptionStatus.ACTIVE },
+                relations: ['price', 'price.product'],
+            });
+            const subByTenant = new Map(activeSubs.map(s => [s.tenantId, s]));
+
+            const tenantBreakdown = tenantRaw.map(row => {
+                const sub = subByTenant.get(row.tenantId);
+                return {
+                    tenantId: row.tenantId as string,
+                    totalTokens: Number(row.totalTokens),
+                    estimatedCost: Math.round((Number(row.totalTokens) / 1000) * costPerThousand * 100) / 100,
+                    planName: sub?.price?.product?.name ?? 'No Plan',
+                    trend: 'stable' as const,
+                };
+            });
+
+            const totalTokensThisMonth = monthlyUsage.at(-1)?.totalTokens ?? 0;
+            const prevMonthTokens = monthlyUsage.at(-2)?.totalTokens ?? 0;
+
+            return {
+                monthlyUsage,
+                tenantBreakdown,
+                costPerThousand,
+                totalTokensThisMonth,
+                totalEstimatedCost: Math.round((totalTokensThisMonth / 1000) * costPerThousand * 100) / 100,
+                vsLastMonth: prevMonthTokens > 0
+                    ? Math.round(((totalTokensThisMonth - prevMonthTokens) / prevMonthTokens) * 100)
+                    : 0,
+            };
+        } catch (err) {
+            console.error('[CommerceService] getTokenEconomics failed:', err.message);
+            return {
+                monthlyUsage: [],
+                tenantBreakdown: [],
+                costPerThousand: 0.002,
+                totalTokensThisMonth: 0,
+                totalEstimatedCost: 0,
+                vsLastMonth: 0,
+            };
+        }
+    }
 }
+

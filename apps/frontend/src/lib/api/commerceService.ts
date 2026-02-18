@@ -119,6 +119,34 @@ export const commerceService = {
         return response.data;
     },
 
+    // ── Admin / Auditor ──
+    getRevenueSummary: async (): Promise<any> => {
+        const response = await apiClient.get('/commerce/admin/revenue-summary');
+        return response.data;
+    },
+    getAdminInvoices: async (): Promise<any[]> => {
+        const response = await apiClient.get('/commerce/admin/invoices');
+        return response.data;
+    },
+    getTokenEconomics: async (): Promise<any> => {
+        const response = await apiClient.get('/commerce/admin/token-economics');
+        return response.data;
+    },
+
+    // ── Admin / Auditor ──
+    getRevenueSummary: async (): Promise<any> => {
+        const response = await apiClient.get('/commerce/admin/revenue-summary');
+        return response.data;
+    },
+    getAdminInvoices: async (): Promise<any[]> => {
+        const response = await apiClient.get('/commerce/admin/invoices');
+        return response.data;
+    },
+    getTokenEconomics: async (): Promise<any> => {
+        const response = await apiClient.get('/commerce/admin/token-economics');
+        return response.data;
+    },
+
     // ── Legacy/Debug ──
     assignPlan: async (priceId: string): Promise<Subscription> => {
         const response = await apiClient.post('/commerce/assign-plan', { priceId });

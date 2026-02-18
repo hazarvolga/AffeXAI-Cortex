@@ -46,4 +46,21 @@ export class CommerceController {
     async assignPlan(@Body() body: { tenantId: string; priceId: string }) {
         return this.commerceService.assignPlan(body.tenantId, body.priceId);
     }
+
+    // ── Auditor / Admin Analytics ──
+    @Get('admin/revenue-summary')
+    async getRevenueSummary() {
+        return this.commerceService.getRevenueSummary();
+    }
+
+    @Get('admin/invoices')
+    async getAdminInvoices() {
+        return this.commerceService.getAdminInvoices();
+    }
+
+    @Get('admin/token-economics')
+    async getTokenEconomics() {
+        return this.commerceService.getTokenEconomics();
+    }
 }
+
