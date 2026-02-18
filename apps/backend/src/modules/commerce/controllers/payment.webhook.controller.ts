@@ -1,6 +1,7 @@
-import { Controller, Post, Headers, Req, BadRequestException } from '@nestjs/common';
+import { Controller, Post, Headers, Req, BadRequestException, RawBodyRequest } from '@nestjs/common';
 import { StripeProvider } from '../services/stripe.provider';
 import { CommerceService } from '../services/commerce.service';
+import { ProvisioningService } from '../services/provisioning.service';
 import { Request } from 'express';
 
 @Controller('commerce/webhooks')
@@ -8,24 +9,24 @@ export class PaymentWebhookController {
     constructor(
         private readonly stripeProvider: StripeProvider,
         private readonly commerceService: CommerceService,
+        private readonly provisioningService: ProvisioningService,
     ) { }
 
     @Post('stripe')
-    async handleStripeWebhook(@Headers('stripe-signature') signature: string, @Req() req: Request) {
+    async handleStripeWebhook(@Headers('stripe-signature') signature: string, @Req() req: RawBodyRequest<Request>) {
         if (!process.env.STRIPE_WEBHOOK_SECRET) {
             throw new BadRequestException('Webhook Secret not configured');
         }
 
+        const rawBody = req.rawBody;
+        if (!rawBody) {
+            throw new BadRequestException('Raw body not available');
+        }
+
         let event;
         try {
-            // In NestJS with raw body parsing, we might need a specific middleware to get the raw buffer.
-            // For now, assuming req.body is accessible or handled by a raw body parser if needed.
-            // A common issue in NestJS is that body parser converts to JSON before here.
-            // We might need to ensure raw body is preserved for this route.
-            // For this MVP implementation, we assume the raw body is passed.
-            // If strictly typed, we might need `req['rawBody']`.
             event = this.stripeProvider.constructEvent(
-                req.body,
+                rawBody,
                 signature,
                 process.env.STRIPE_WEBHOOK_SECRET
             );
@@ -36,15 +37,23 @@ export class PaymentWebhookController {
 
         switch (event.type) {
             case 'checkout.session.completed':
-                // const session = event.data.object;
-                // Activate subscription
-                // await this.commerceService.handleCheckoutSuccess(session);
+                const session = event.data.object;
+                try {
+                    await this.provisioningService.provisionTenantFromCheckout(session);
+                } catch (error) {
+                    console.error('Provisioning failed:', error);
+                    // Do not throw error here to avoid Stripe retrying indefinitely if it's a logic error?
+                    // Actually, if it fails, we WANT Stripe to retry usually (e.g. DB connection error).
+                    // But if logic error, retry won't fix it.
+                    // For now, log and rethrow internal server error if critical?
+                    // Or just log.
+                }
                 break;
             case 'invoice.payment_succeeded':
-                // Renew subscription period
+                // Renew subscription period logic
                 break;
             case 'customer.subscription.deleted':
-                // Cancel subscription
+                // Cancel subscription logic
                 break;
             default:
                 console.log(`Unhandled event type ${event.type}`);

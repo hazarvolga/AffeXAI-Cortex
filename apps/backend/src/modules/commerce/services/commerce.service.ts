@@ -1,11 +1,15 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, Inject, forwardRef } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, MoreThan } from 'typeorm';
 import { Product } from '../entities/product.entity';
 import { Price } from '../entities/price.entity';
 import { Subscription, SubscriptionStatus } from '../entities/subscription.entity';
 import { UsageRecord } from '../entities/usage-record.entity';
 import { StripeProvider } from './stripe.provider';
+
+import { Cron, CronExpression } from '@nestjs/schedule';
+import { User } from '../../users/entities/user.entity';
+import { MailService } from '../../mail/mail.service';
 
 @Injectable()
 export class CommerceService {
@@ -18,7 +22,11 @@ export class CommerceService {
         private subscriptionRepo: Repository<Subscription>,
         @InjectRepository(UsageRecord)
         private usageRepo: Repository<UsageRecord>,
+        @InjectRepository(User)
+        private userRepo: Repository<User>,
         private stripeProvider: StripeProvider,
+        @Inject(forwardRef(() => MailService))
+        private mailService: MailService,
     ) { }
 
     // --- Product Catalog ---
@@ -133,6 +141,28 @@ export class CommerceService {
     }
 
     // --- Governance / Rate Limiting ---
+    async checkUserLimit(tenantId: string): Promise<{ allowed: boolean; remaining: number; limit: number }> {
+        if (!tenantId) return { allowed: true, remaining: 10, limit: 10 };
+
+        const sub = await this.getSubscription(tenantId);
+        // Default 3 users if no subscription
+        let limit = 3;
+        if (sub && sub.price.product.metadata?.max_users) {
+            limit = sub.price.product.metadata.max_users;
+        }
+
+        // Count ACTIVE users only
+        const activeUsers = await this.userRepo.count({
+            where: { tenantId, isActive: true }
+        });
+
+        return {
+            allowed: activeUsers < limit,
+            remaining: Math.max(0, limit - activeUsers),
+            limit
+        };
+    }
+
     async getUsageStats(tenantId: string) {
         const check = await this.checkLimit(tenantId);
         const sub = await this.getSubscription(tenantId);
@@ -193,7 +223,6 @@ export class CommerceService {
     }
 
     async logUsage(tenantId: string, tokens: number, action: string, serviceName: string) {
-        // Fire and forget logging
         const record = this.usageRepo.create({
             tenantId,
             tokensUsed: tokens,
@@ -201,5 +230,86 @@ export class CommerceService {
             serviceName
         });
         await this.usageRepo.save(record);
+    }
+
+    async createPortalSession(tenantId: string, returnUrl: string) {
+        const sub = await this.getSubscription(tenantId);
+        if (!sub || !sub.stripeCustomerId) {
+            throw new BadRequestException('No billing account found');
+        }
+
+        const session = await this.stripeProvider.createPortalSession(
+            sub.stripeCustomerId,
+            returnUrl
+        );
+        return session;
+    }
+
+    @Cron(CronExpression.EVERY_HOUR)
+    async checkUsageAlerts() {
+        console.log('[CommerceService] Checking usage alerts...');
+        const subs = await this.subscriptionRepo.find({
+            where: { status: SubscriptionStatus.ACTIVE },
+            relations: ['price', 'price.product']
+        });
+
+        for (const sub of subs) {
+            try {
+                const stats = await this.getUsageStats(sub.tenantId);
+                const percentage = stats.used / stats.limit;
+
+                if (percentage >= 1.0) {
+                    await this.triggerAlert(sub.tenantId, '100', stats);
+                } else if (percentage >= 0.8) {
+                    await this.triggerAlert(sub.tenantId, '80', stats);
+                }
+            } catch (e) {
+                console.error(`Error checking alert for tenant ${sub.tenantId}:`, e);
+            }
+        }
+    }
+
+    private async triggerAlert(tenantId: string, threshold: '80' | '100', stats: any) {
+        const action = `alert_${threshold}`;
+        const service = 'commerce_alerts';
+
+        const sub = await this.getSubscription(tenantId);
+        const periodStart = sub?.currentPeriodStart || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+
+        const exists = await this.usageRepo.findOne({
+            where: {
+                tenantId,
+                action,
+                serviceName: service,
+                timestamp: MoreThan(periodStart),
+            } as any
+        });
+
+        if (!exists) {
+            const admin = await this.userRepo.findOne({
+                where: { tenantId } as any,
+                order: { createdAt: 'ASC' }
+            });
+
+            if (admin && admin.email) {
+                const subject = threshold === '100'
+                    ? '🚨 Action Required: Usage Limit Reached'
+                    : '⚠️ Usage Warning: 80% Limit Reached';
+
+                const message = threshold === '100'
+                    ? `You have used ${stats.used} of ${stats.limit} tokens. Services may be paused.`
+                    : `You have used ${stats.used} of ${stats.limit} tokens.`;
+
+                await this.mailService.sendMail({
+                    to: { email: admin.email },
+                    subject,
+                    html: `<p>${message}</p><p>Please upgrade your plan to continue.</p>`,
+                    channel: 'system' as any
+                });
+
+                await this.logUsage(tenantId, 0, action, service);
+                console.log(`[CommerceService] Sent ${threshold}% alert to ${admin.email}`);
+            }
+        }
     }
 }

@@ -1,0 +1,8 @@
+
+> affexai-backend@0.0.1 typeorm:migration:run
+> npm run typeorm -- -d ./src/database/data-source.ts migration:run
+
+
+> affexai-backend@0.0.1 typeorm
+> typeorm-ts-node-commonjs -d ./src/database/data-source.ts migration:run
+

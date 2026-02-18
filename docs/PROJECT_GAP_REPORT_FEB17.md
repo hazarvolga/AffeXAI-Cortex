@@ -29,6 +29,30 @@
     - [x] Facebook/Instagram Configured (Needs verification).
 - **Impact:** Partial social management features.
 
+### 5. Commerce Architecture (Critical)
+- **Severity:** CRITICAL
+- **Gap:** `CommerceModule` entities (`Product`, `Price`, `Subscription`) exist but have **no database tables** (missing migration).
+- **Impact:** Subscription queries fail (`relation "subscriptions" does not exist`), preventing any purchase or quota logic.
+- **Fix:** generating and running a migration for Commerce entities.
+
+### 6. Purchase Workflow (Critical)
+- **Severity:** HIGH
+- **Gap:** `PaymentWebhookController` logic is commented out. Raw body parsing for Stripe signature verification is likely unhandled.
+- **Impact:** Purchases on Stripe do not trigger subscription activation in Cortex.
+- **Fix:** Uncomment logic, ensure raw body middleware, handle subscription cancellations.
+
+### 7. User Provisioning (Critical)
+- **Severity:** CRITICAL
+- **Gap:** `CommerceService` webhook handler does not create a `User` or `Tenant` when a new subscription is purchased.
+- **Impact:** New customers pay but cannot log in (no account created).
+- **Fix:** Implement `ProvisioningService` to create Tenant + Admin User + Welcome Email upon successful Stripe Checkout.
+
+### 8. Transactional Emails (Partial)
+- **Severity:** MEDIUM
+- **Gap:** Email templates (`welcome.tsx`, `account-created.tsx`) exist but are not triggered by the purchase flow.
+- **Impact:** Users do not receive login credentials after buying.
+- **Fix:** Wire up `MailService` to the new `ProvisioningService`.
+
 ## 🛠 Technical Debt
 
 1.  **Frontend Auth Duplication:**

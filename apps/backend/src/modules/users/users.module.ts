@@ -14,6 +14,7 @@ import { SettingsModule } from '../settings/settings.module';
 import { UserEmailService } from './services/user-email.service';
 import { TicketsModule } from '../tickets/tickets.module';
 import { TenantModule } from '../../core/tenant/tenant.module';
+import { CommerceModule } from '../commerce/commerce.module';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { TenantModule } from '../../core/tenant/tenant.module';
     forwardRef(() => CrmModule), // Use forwardRef to avoid circular dependency
     forwardRef(() => MailModule), // Use forwardRef to avoid circular dependency with EmailMarketingModule
     forwardRef(() => TicketsModule), // Use forwardRef to avoid circular dependency with TicketsModule
+    forwardRef(() => CommerceModule),
   ],
   controllers: [UsersController],
   providers: [UsersService, UserRolesService, UserEmailService],

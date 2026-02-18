@@ -1,7 +1,7 @@
 # Cortex Zero: Living Codex
 
 > **Source of Truth** for all exported Classes, Interfaces, Enums, and Types.
-> Generated: 1771346720.4882185
+> Generated: 1771452021.5333512
 
 
 ## A
@@ -89,14 +89,12 @@
 - `AiGenerationResult` (interface) → [`apps/backend/src/modules/ai/ai.service.ts`](apps/backend/src/modules/ai/ai.service.ts)
 - `AiMagicControls` (const) → [`apps/frontend/src/components/social/composer/AiMagicControls.tsx`](apps/frontend/src/components/social/composer/AiMagicControls.tsx)
 - `AiModel` (enum) → [`apps/backend/src/modules/settings/dto/ai-settings.dto.ts`](apps/backend/src/modules/settings/dto/ai-settings.dto.ts)
-- `AiModel` (enum) → [`apps/backend/src/modules/ai/enums/ai-model.enum.ts`](apps/backend/src/modules/ai/enums/ai-model.enum.ts)
 - `AiModel` (type) → [`apps/frontend/src/lib/api/settingsService.ts`](apps/frontend/src/lib/api/settingsService.ts)
 - `AiModule` (class) → [`apps/backend/src/modules/ai/ai.module.ts`](apps/backend/src/modules/ai/ai.module.ts)
 - `AiModuleSettings` (interface) → [`apps/frontend/src/lib/api/settingsService.ts`](apps/frontend/src/lib/api/settingsService.ts)
 - `AiModuleSettingsDto` (class) → [`apps/backend/src/modules/settings/dto/ai-settings.dto.ts`](apps/backend/src/modules/settings/dto/ai-settings.dto.ts)
 - `AiProvider` (enum) → [`apps/backend/src/modules/settings/dto/ai-settings.dto.ts`](apps/backend/src/modules/settings/dto/ai-settings.dto.ts)
 - `AiProvider` (enum) → [`apps/backend/src/modules/chat/entities/ai-usage-log.entity.ts`](apps/backend/src/modules/chat/entities/ai-usage-log.entity.ts)
-- `AiProvider` (enum) → [`apps/backend/src/modules/ai/enums/ai-model.enum.ts`](apps/backend/src/modules/ai/enums/ai-model.enum.ts)
 - `AiProvider` (type) → [`apps/frontend/src/lib/api/settingsService.ts`](apps/frontend/src/lib/api/settingsService.ts)
 - `AiProvider` (interface) → [`apps/frontend/src/services/ai-provider.service.ts`](apps/frontend/src/services/ai-provider.service.ts)
 - `AiProviderController` (class) → [`apps/backend/src/modules/ai/ai-provider.controller.ts`](apps/backend/src/modules/ai/ai-provider.controller.ts)
@@ -261,8 +259,8 @@
 - `BarChart` (const) → [`apps/frontend/src/components/charts/lazy-charts.tsx`](apps/frontend/src/components/charts/lazy-charts.tsx)
 - `BaseEntity` (class) → [`apps/backend/src/core/database/entities/base.entity.ts`](apps/backend/src/core/database/entities/base.entity.ts)
 - `BaseServiceConfig` (interface) → [`apps/frontend/src/lib/api/base-service.ts`](apps/frontend/src/lib/api/base-service.ts)
-- `BaselineSchema1771176355917` (class) → [`apps/backend/src/database/migrations/1771176355917-BaselineSchema.ts`](apps/backend/src/database/migrations/1771176355917-BaselineSchema.ts)
-- `BaselineSchema1771176513964` (class) → [`apps/backend/src/database/migrations/1771176513964-BaselineSchema.ts`](apps/backend/src/database/migrations/1771176513964-BaselineSchema.ts)
+- `BaselineSchema1771176355917` (class) → [`apps/backend/src/database/migrations/disabled/1771176355917-BaselineSchema.ts`](apps/backend/src/database/migrations/disabled/1771176355917-BaselineSchema.ts)
+- `BaselineSchema1771176513964` (class) → [`apps/backend/src/database/migrations/disabled/1771176513964-BaselineSchema.ts`](apps/backend/src/database/migrations/disabled/1771176513964-BaselineSchema.ts)
 - `BatchImportSummary` (interface) → [`apps/backend/src/modules/email-marketing/services/import-integration.service.ts`](apps/backend/src/modules/email-marketing/services/import-integration.service.ts)
 - `BatchJob` (interface) → [`apps/backend/src/modules/email-marketing/services/batch-processing.service.ts`](apps/backend/src/modules/email-marketing/services/batch-processing.service.ts)
 - `BatchProcessingJob` (interface) → [`apps/backend/src/modules/faq-learning/interfaces/pattern-recognition.interface.ts`](apps/backend/src/modules/faq-learning/interfaces/pattern-recognition.interface.ts)
@@ -634,6 +632,7 @@
 - `CreateCmsMetricsTable1729264800000` (class) → [`apps/backend/src/core/database/migrations_archive/1729264800000-CreateCmsMetricsTable.ts`](apps/backend/src/core/database/migrations_archive/1729264800000-CreateCmsMetricsTable.ts)
 - `CreateCmsTables1710000000000` (class) → [`apps/backend/src/core/database/migrations_archive/1710000000000-CreateCmsTables.ts`](apps/backend/src/core/database/migrations_archive/1710000000000-CreateCmsTables.ts)
 - `CreateCmsTemplateDto` (class) → [`apps/backend/src/modules/cms/dto/create-template.dto.ts`](apps/backend/src/modules/cms/dto/create-template.dto.ts)
+- `CreateCommerceTables1771449820476` (class) → [`apps/backend/src/database/migrations/1771449820476-CreateCommerceTables.ts`](apps/backend/src/database/migrations/1771449820476-CreateCommerceTables.ts)
 - `CreateCompanyKnowledgeSources1728000000028` (class) → [`apps/backend/src/core/database/migrations_archive/1728000000028-CreateCompanyKnowledgeSources.ts`](apps/backend/src/core/database/migrations_archive/1728000000028-CreateCompanyKnowledgeSources.ts)
 - `CreateComponentDto` (class) → [`apps/backend/src/modules/cms/dto/create-component.dto.ts`](apps/backend/src/modules/cms/dto/create-component.dto.ts)
 - `CreateComponentDto` (interface) → [`apps/frontend/src/services/reusable-content.service.ts`](apps/frontend/src/services/reusable-content.service.ts)
@@ -999,7 +998,6 @@
 - `FeatureUpdateEmail` (const) → [`apps/backend/src/emails/feature-update.tsx`](apps/backend/src/emails/feature-update.tsx)
 - `FeatureUpdateEmail` (const) → [`apps/frontend/src/emails/feature-update.tsx`](apps/frontend/src/emails/feature-update.tsx)
 - `FeedbackAction` (enum) → [`apps/backend/src/modules/strategy/dto/create-feedback.dto.ts`](apps/backend/src/modules/strategy/dto/create-feedback.dto.ts)
-- `FeedbackAction` (enum) → [`apps/backend/src/modules/strategy/enums/feedback-action.enum.ts`](apps/backend/src/modules/strategy/enums/feedback-action.enum.ts)
 - `FeedbackAnalysis` (interface) → [`apps/backend/src/modules/faq-learning/services/feedback-processor.service.ts`](apps/backend/src/modules/faq-learning/services/feedback-processor.service.ts)
 - `FeedbackData` (interface) → [`apps/backend/src/modules/faq-learning/services/chat-faq-integration.service.ts`](apps/backend/src/modules/faq-learning/services/chat-faq-integration.service.ts)
 - `FeedbackData` (interface) → [`apps/backend/src/modules/faq-learning/services/feedback-processor.service.ts`](apps/backend/src/modules/faq-learning/services/feedback-processor.service.ts)
@@ -1572,6 +1570,7 @@
 - `ProviderStatus` (interface) → [`apps/backend/src/modules/faq-learning/interfaces/faq-ai.interface.ts`](apps/backend/src/modules/faq-learning/interfaces/faq-ai.interface.ts)
 - `ProviderStatus` (interface) → [`apps/backend/src/modules/ai/ai-routing.service.ts`](apps/backend/src/modules/ai/ai-routing.service.ts)
 - `ProviderStatus` (interface) → [`apps/frontend/src/services/faq-learning.service.ts`](apps/frontend/src/services/faq-learning.service.ts)
+- `ProvisioningService` (class) → [`apps/backend/src/modules/commerce/services/provisioning.service.ts`](apps/backend/src/modules/commerce/services/provisioning.service.ts)
 - `Public` (const) → [`apps/backend/src/core/auth/decorators/public.decorator.ts`](apps/backend/src/core/auth/decorators/public.decorator.ts)
 - `PublicRsvpForm` (const) → [`apps/frontend/src/components/events/public-rsvp-form.tsx`](apps/frontend/src/components/events/public-rsvp-form.tsx)
 

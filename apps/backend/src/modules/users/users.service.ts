@@ -15,6 +15,7 @@ import { CrmService } from '../crm/crm.service';
 import { UserEmailService } from './services/user-email.service';
 import { TenantService } from '../../core/tenant/tenant.service';
 import { EventEmitter2 } from '@nestjs/event-emitter';
+import { CommerceService } from '../commerce/services/commerce.service';
 
 @Injectable()
 export class UsersService {
@@ -30,6 +31,8 @@ export class UsersService {
     private userEmailService: UserEmailService,
     private tenantService: TenantService,
     private eventEmitter: EventEmitter2,
+    @Inject(forwardRef(() => CommerceService))
+    private commerceService: CommerceService,
   ) { }
 
   async create(createUserDto: CreateUserDto, tenantId?: string): Promise<User> {
@@ -41,6 +44,12 @@ export class UsersService {
       const existingUser = await this.findByEmail(createUserDto.email, activeTenantId, true);
       if (existingUser) {
         throw new ConflictException('User with this email already exists');
+      }
+
+      // Check User Limits (Seat Management)
+      const limitCheck = await this.commerceService.checkUserLimit(activeTenantId);
+      if (!limitCheck.allowed) {
+        throw new BadRequestException(`User limit reached for your plan. Upgrade to add more users.`);
       }
 
       // If no roleId provided, assign default viewer role
@@ -576,6 +585,23 @@ export class UsersService {
     // Clear cache
     await this.cacheService.del(`users:${id}`);
     await this.cacheService.del('users:all');
+
+    return updatedUser;
+  }
+
+  async deactivateUser(id: string, tenantId?: string): Promise<User> {
+    const activeTenantId = tenantId || this.tenantService.getTenantId();
+    const user = await this.findOne(id, activeTenantId);
+
+    user.isActive = false;
+    const updatedUser = await this.usersRepository.save(user);
+
+    // Clear cache to enforce immediately
+    await this.cacheService.del(`users:${id}`);
+    await this.cacheService.del('users:all');
+
+    // Emit event
+    this.eventEmitter.emit('user.deactivated', { userId: id, tenantId: activeTenantId });
 
     return updatedUser;
   }

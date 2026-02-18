@@ -167,6 +167,26 @@ export class MailService implements IMailService {
       }
     }
 
+    // Growth Branding: Append "Powered by" footer if enabled
+    try {
+      const siteSettings = await this.settingsService.getSiteSettings(tenantId);
+      if (siteSettings.showPoweredBy === 'true' && enhancedOptions.html) {
+        const footerHtml = `
+             <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; text-align: center; color: #888; font-size: 12px;">
+                 <p>Powered by <a href="https://affexai.com" style="color: #666; text-decoration: none; font-weight: bold;">AffeXAI</a></p>
+             </div>`;
+
+        // Insert before body close or append
+        if (enhancedOptions.html.includes('</body>')) {
+          enhancedOptions.html = enhancedOptions.html.replace('</body>', `${footerHtml}</body>`);
+        } else {
+          enhancedOptions.html += footerHtml;
+        }
+      }
+    } catch (e) {
+      this.logger.warn(`Failed to apply branding: ${e.message}`);
+    }
+
     // Send via adapter
     this.logger.log(`[EMAIL DEBUG] Calling adapter.sendMail...`);
     const result = await adapter.sendMail(enhancedOptions);
@@ -285,5 +305,24 @@ export class MailService implements IMailService {
     }
 
     return enhanced;
+  }
+
+  /**
+   * Send account creation email (Welcome Email)
+   */
+  async sendAccountCreated(to: string, context: { name: string; password?: string; loginUrl: string; workspaceName: string }) {
+    return this.sendMail({
+      to: { email: to },
+      subject: 'Welcome to AffeXAI - Your Account is Ready 🚀',
+      template: 'account-created', // Matches template filename in mail/templates
+      channel: MailChannel.TRANSACTIONAL,
+      context: {
+        name: context.name,
+        password: context.password, // Template should handle if password is provided
+        login_url: context.loginUrl,
+        workspace_name: context.workspaceName,
+        action_url: context.loginUrl, // Standard variable for button
+      }
+    });
   }
 }

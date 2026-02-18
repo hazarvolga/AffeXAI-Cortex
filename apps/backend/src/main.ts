@@ -13,7 +13,9 @@ import { json, urlencoded } from 'express';
 
 async function bootstrap() {
   try {
-    const app = await NestFactory.create<NestExpressApplication>(AppModule);
+    const app = await NestFactory.create<NestExpressApplication>(AppModule, {
+      rawBody: true,
+    });
 
     // Serve static files from uploads directory
     // Use process.cwd() for Docker compatibility - uploads directory is at project root

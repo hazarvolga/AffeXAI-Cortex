@@ -100,6 +100,7 @@ export class SettingsService {
     // Convert flat settings to nested structure
     const siteSettings: SiteSettingsDto = {
       companyName: this.getSettingValue(settings, SettingCategory.COMPANY, 'companyName', 'Aluplan Program Sistemleri'),
+      showPoweredBy: this.getSettingValue(settings, SettingCategory.COMPANY, 'showPoweredBy', 'true'),
       domain: this.getSettingValue(settings, SettingCategory.COMPANY, 'domain', 'affexai.com'),
       logoUrl: this.getSettingValue(settings, SettingCategory.COMPANY, 'logoUrl', 'https://placehold.co/140x40/f7f7f7/1a1a1a?text=Aluplan'),
       logoDarkUrl: this.getSettingValue(settings, SettingCategory.COMPANY, 'logoDarkUrl', 'https://placehold.co/140x40/171717/f0f0f0?text=Aluplan'),
@@ -128,6 +129,9 @@ export class SettingsService {
     const activeTenantId = this.getActiveTenantId(tenantId);
     // Update company settings
     await this.updateOrCreateSetting(SettingCategory.COMPANY, 'companyName', settingsDto.companyName, activeTenantId);
+    if (settingsDto.showPoweredBy !== undefined) {
+      await this.updateOrCreateSetting(SettingCategory.COMPANY, 'showPoweredBy', String(settingsDto.showPoweredBy), activeTenantId);
+    }
     await this.updateOrCreateSetting(SettingCategory.COMPANY, 'domain', settingsDto.domain, activeTenantId);
     await this.updateOrCreateSetting(SettingCategory.COMPANY, 'logoUrl', settingsDto.logoUrl, activeTenantId);
     await this.updateOrCreateSetting(SettingCategory.COMPANY, 'logoDarkUrl', settingsDto.logoDarkUrl, activeTenantId);

@@ -2137,7 +2137,7 @@ AffeXAI projesi, **kod seviyesinde inceleme** sonucunda ilk rapordan **daha iyi 
 **Analiz Tipi:** Kod Seviyesinde Detaylı İnceleme  
 **Sonraki Güncelleme:** Sprint 1 tamamlandıktan sonra
 
-ChatGPT said:
+ChatGPT :
 
 çok sağlam bir analiz çıkarmışsın 👏 bu seviyede detay varken “tahmini” değil mühendislik hesabıyla sunucu konuşabiliriz.
 Aşağıda 50 müşteri (aktif tenant) varsayımıyla, gerçekçi production senaryosu üzerinden net öneri bırakıyorum.
@@ -4073,6 +4073,8 @@ Hazır olduğunda:
 
 Geliştirmeleri bitir, geri gel — bu başvuruyu optimize ederek yapalım 💪
 
+
+Ürün Fiyatlandırma Paketleme Önerileri
 You said:
 ya akılma takılan bir konu daha var multi tenant yapıda bu rünüben nasıl pazarlamalıyım yani nasıl paketler oluşturmalıyım sence
 

@@ -57,6 +57,10 @@ export class SiteSettingsDto {
   @IsString()
   companyName: string;
 
+  @IsOptional()
+  @IsString()
+  showPoweredBy?: string; // Stored as string 'true'/'false' in DB, passed as string or boolean? DB is string value.
+
   @IsString()
   @IsNotEmpty()
   domain: string;
