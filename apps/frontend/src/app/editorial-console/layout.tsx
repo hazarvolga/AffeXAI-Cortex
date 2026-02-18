@@ -120,6 +120,9 @@ export default function EditorialLayout({ children }: { children: ReactNode }) {
                     <Link href="/editorial-console/products" title="Product Catalog">
                         <span className="material-icons text-lg hover:text-[#9df425] transition-colors cursor-pointer">inventory_2</span>
                     </Link>
+                    <Link href="/editorial-console/commerce" title="Commerce & Billing">
+                        <span className="material-icons text-lg hover:text-[#9df425] transition-colors cursor-pointer">payments</span>
+                    </Link>
                     <Link href="/editorial-console/security" title="Security Center">
                         <span className="material-icons text-lg hover:text-[#9df425] transition-colors cursor-pointer">security</span>
                     </Link>

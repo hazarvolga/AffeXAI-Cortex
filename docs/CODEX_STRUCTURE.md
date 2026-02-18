@@ -1,7 +1,7 @@
 # Cortex Zero: Living Codex
 
 > **Source of Truth** for all exported Classes, Interfaces, Enums, and Types.
-> Generated: 1771452021.5333512
+> Generated: 1771452946.4829266
 
 
 ## A
@@ -2193,6 +2193,7 @@
 - `UsageHUD` (const) → [`apps/frontend/src/modules/commerce/UsageHUD.tsx`](apps/frontend/src/modules/commerce/UsageHUD.tsx)
 - `UsageLimit` (interface) → [`apps/frontend/src/lib/api/commerceService.ts`](apps/frontend/src/lib/api/commerceService.ts)
 - `UsageRecord` (class) → [`apps/backend/src/modules/commerce/entities/usage-record.entity.ts`](apps/backend/src/modules/commerce/entities/usage-record.entity.ts)
+- `UsageStats` (interface) → [`apps/frontend/src/lib/api/commerceService.ts`](apps/frontend/src/lib/api/commerceService.ts)
 - `UseApiCallOptions` (interface) → [`apps/frontend/src/hooks/useApiCall.ts`](apps/frontend/src/hooks/useApiCall.ts)
 - `UseApiCallResult` (interface) → [`apps/frontend/src/hooks/useApiCall.ts`](apps/frontend/src/hooks/useApiCall.ts)
 - `UseApiMutationOptions` (interface) → [`apps/frontend/src/lib/query/hooks.ts`](apps/frontend/src/lib/query/hooks.ts)
@@ -2210,6 +2211,7 @@
 - `UserActivity` (interface) → [`apps/frontend/src/lib/api/usersService.ts`](apps/frontend/src/lib/api/usersService.ts)
 - `UserEcosystemTile` (const) → [`apps/frontend/src/components/brand/OverviewIntegrationTiles.tsx`](apps/frontend/src/components/brand/OverviewIntegrationTiles.tsx)
 - `UserEmailService` (class) → [`apps/backend/src/modules/users/services/user-email.service.ts`](apps/backend/src/modules/users/services/user-email.service.ts)
+- `UserLimit` (interface) → [`apps/frontend/src/lib/api/commerceService.ts`](apps/frontend/src/lib/api/commerceService.ts)
 - `UserManagementService` (class) → [`apps/frontend/src/services/user-management.service.ts`](apps/frontend/src/services/user-management.service.ts)
 - `UserRole` (enum) → [`apps/backend/src/modules/users/enums/user-role.enum.ts`](apps/backend/src/modules/users/enums/user-role.enum.ts)
 - `UserRole` (class) → [`apps/backend/src/modules/users/entities/user-role.entity.ts`](apps/backend/src/modules/users/entities/user-role.entity.ts)

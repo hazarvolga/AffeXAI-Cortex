@@ -13,8 +13,8 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
     // Determine accent color based on status
     const accentColor =
         status === 'active' ? '#9df425' :
-            status === 'archived' ? '#ffffff40' : // White with opacity for archived
-                '#ff8c00'; // Fallback
+            status === 'archived' ? '#ffffff40' :
+                '#ff8c00';
 
     return (
         <BccHudTile
@@ -40,7 +40,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
                 <div className="flex items-center justify-between py-2 border-b border-white/5">
                     <div className="flex items-center space-x-2">
                         <Users className="w-3 h-3 text-white/40" />
-                        <span className="text-[10px] font-mono text-white/80">{stats.activeTenants} Active</span>
+                        <span className="text-[10px] font-mono text-white/80">{stats?.activeTenants ?? 0} Active</span>
                     </div>
                     <div className="flex items-center space-x-1">
                         <TrendingUp className="w-3 h-3" style={{ color: accentColor }} />
@@ -50,15 +50,15 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
 
                 {/* Feature List */}
                 <div className="space-y-3 min-h-[80px]">
-                    {features.slice(0, 3).map((feature, i) => (
+                    {(features ?? []).slice(0, 3).map((feature, i) => (
                         <div key={i} className="flex items-center space-x-3 text-[10px] text-white/60">
                             <CheckCircle2 className="w-3 h-3 opacity-50" style={{ color: accentColor }} />
                             <span className="uppercase tracking-wide">{feature}</span>
                         </div>
                     ))}
-                    {features.length > 3 && (
+                    {(features?.length ?? 0) > 3 && (
                         <div className="text-[9px] text-white/20 pl-6 uppercase tracking-widest">
-                            +{features.length - 3} ADDITIONAL_MODULES
+                            +{features!.length - 3} ADDITIONAL_MODULES
                         </div>
                     )}
                 </div>
@@ -66,3 +66,4 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
         </BccHudTile>
     );
 };
+

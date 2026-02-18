@@ -1,7 +1,7 @@
 'use client'
 
 import Link from "next/link";
-import { Package2, Home, Users, LineChart, Bell, Settings, Calendar, LifeBuoy, Bot, Globe, Award, FileText, Send, Share2, Layers, Palette, BookOpen, Wand2, Brain, TrendingUp, ChevronLeft, ChevronRight, BarChart3, Map, FlaskConical, FileStack, Database, Box, Star, HardDrive, LayoutDashboard } from "lucide-react";
+import { Package2, Home, Users, LineChart, Bell, Settings, Calendar, LifeBuoy, Bot, Globe, Award, FileText, Send, Share2, Layers, Palette, BookOpen, Wand2, Brain, TrendingUp, ChevronLeft, ChevronRight, BarChart3, Map, FlaskConical, FileStack, Database, Box, Star, HardDrive, LayoutDashboard, CreditCard } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "../ui/accordion";
@@ -61,6 +61,7 @@ const settingsLinks = [
     { href: "/admin/logs", label: "Aktivite Kayıtları", icon: LineChart },
     { href: "/admin/settings/automation", label: "Otomasyon Merkezi", icon: Bot },
     { href: "/admin/settings/backup", label: "Yedekleme", icon: HardDrive },
+    { href: "/admin/settings/billing", label: "Fatura & Kullanım", icon: CreditCard },
 ];
 
 export function CollapsibleDashboardSidebar() {
