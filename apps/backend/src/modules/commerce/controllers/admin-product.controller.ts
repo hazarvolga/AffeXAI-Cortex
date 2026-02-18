@@ -22,8 +22,18 @@ export class AdminProductController {
         return this.productManagementService.createProduct(body);
     }
 
+    @Get(':id')
+    async getProductById(@Param('id') id: string) {
+        return this.productManagementService.getProductById(id);
+    }
+
     @Put(':id')
     async updateProduct(@Param('id') id: string, @Body() body: any) {
         return this.productManagementService.updateProduct(id, body);
+    }
+
+    @Delete(':id')
+    async archiveProduct(@Param('id') id: string) {
+        return this.productManagementService.archiveProduct(id);
     }
 }

@@ -109,6 +109,16 @@ export const commerceService = {
         return response.data;
     },
 
+    getProductById: async (id: string): Promise<Product> => {
+        const response = await apiClient.get(`/commerce/admin/products/${id}`);
+        return response.data;
+    },
+
+    deleteProduct: async (id: string): Promise<{ archived: boolean; id: string }> => {
+        const response = await apiClient.delete(`/commerce/admin/products/${id}`);
+        return response.data;
+    },
+
     // ── Legacy/Debug ──
     assignPlan: async (priceId: string): Promise<Subscription> => {
         const response = await apiClient.post('/commerce/assign-plan', { priceId });

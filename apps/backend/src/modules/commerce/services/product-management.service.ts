@@ -122,7 +122,35 @@ export class ProductManagementService {
     async getAdminProducts() {
         return this.productRepo.find({
             relations: ['prices'],
-            order: { createdAt: 'ASC' } // or by metadata order
+            order: { createdAt: 'ASC' }
         });
+    }
+
+    async getProductById(id: string) {
+        const product = await this.productRepo.findOne({
+            where: { id },
+            relations: ['prices'],
+        });
+        if (!product) throw new NotFoundException('Product not found');
+        return product;
+    }
+
+    async archiveProduct(id: string) {
+        const product = await this.productRepo.findOne({ where: { id } });
+        if (!product) throw new NotFoundException('Product not found');
+
+        product.active = false;
+        await this.productRepo.save(product);
+
+        // Archive on Stripe if synced
+        if (product.stripeProductId) {
+            try {
+                await this.stripeProvider.archiveProduct(product.stripeProductId);
+            } catch (error) {
+                this.logger.warn(`Failed to archive on Stripe: ${error.message}`);
+            }
+        }
+
+        return { archived: true, id };
     }
 }

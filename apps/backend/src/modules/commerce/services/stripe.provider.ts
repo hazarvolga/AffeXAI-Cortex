@@ -113,6 +113,15 @@ export class StripeProvider {
         return { product, price };
     }
 
+    async archiveProduct(stripeProductId: string) {
+        try {
+            return await this.stripe.products.update(stripeProductId, { active: false });
+        } catch (error) {
+            this.logger.error(`Failed to archive Stripe product ${stripeProductId}: ${error.message}`);
+            throw error;
+        }
+    }
+
     constructEvent(payload: string | Buffer, signature: string, secret: string): Stripe.Event {
         try {
             return this.stripe.webhooks.constructEvent(payload, signature, secret);
