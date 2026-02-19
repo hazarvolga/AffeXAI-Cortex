@@ -38,7 +38,7 @@ export default function EditorialLayout({ children }: { children: ReactNode }) {
     if (authLoading) return <div className="h-screen bg-[#080808] flex items-center justify-center text-[#9df425] font-mono tracking-widest">INITIALIZING...</div>;
 
     return (
-        <div lang="en" className={`min-h-screen bg-[#080808] text-white font-sans ${spaceGrotesk.variable} overflow-hidden select-none`}>
+        <div className={`min-h-screen bg-[#080808] text-white font-sans ${spaceGrotesk.variable} relative`}>
             {/* Load Material Icons */}
             <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
             <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
@@ -83,10 +83,10 @@ export default function EditorialLayout({ children }: { children: ReactNode }) {
                         <span className="text-xl font-bold tracking-tighter uppercase">AffeXAI</span>
                     </div>
                     <nav className="hidden md:flex space-x-8 text-[10px] tracking-[0.2em] font-medium uppercase text-white/40">
-                        <a className="hover:text-[#9df425] transition-colors" href="#">Intelligence</a>
-                        <a className="text-[#9df425]" href="#">Market Landscape / V3</a>
-                        <a className="hover:text-[#9df425] transition-colors" href="#">Strategic Ops</a>
-                        <a className="hover:text-[#9df425] transition-colors" href="#">Archive</a>
+                        <Link className="hover:text-[#9df425] transition-colors" href="/editorial-console/intelligence">Intelligence</Link>
+                        <Link className="hover:text-[#9df425] transition-colors" href="/editorial-console">Market Landscape / V3</Link>
+                        <Link className="hover:text-[#9df425] transition-colors" href="/editorial-console/auditor">Strategic Ops</Link>
+                        <Link className="hover:text-[#9df425] transition-colors" href="#">Archive</Link>
                     </nav>
                 </div>
                 <div className="flex items-center space-x-6">
@@ -102,9 +102,12 @@ export default function EditorialLayout({ children }: { children: ReactNode }) {
             </header>
 
             {/* Main Editorial Spread */}
-            <main className="relative h-screen w-full flex overflow-hidden pt-[72px]">
+            <main className="relative min-h-screen w-full flex pt-[72px]">
                 {/* Left Intelligence Gutter */}
                 <div className="w-16 border-r border-white/5 flex flex-col items-center py-24 space-y-8 text-white/30 z-20 bg-[#080808]">
+                    <Link href="/editorial-console/intelligence" title="Market Intelligence">
+                        <span className="material-icons text-lg hover:text-[#9df425] transition-colors cursor-pointer">psychology</span>
+                    </Link>
                     <Link href="/editorial-console/auditor" title="Auditor (Financial)">
                         <span className="material-icons text-lg hover:text-[#9df425] transition-colors cursor-pointer">adjust</span>
                     </Link>
@@ -132,7 +135,7 @@ export default function EditorialLayout({ children }: { children: ReactNode }) {
                 </div>
 
                 {/* Central Content - Fixed Viewport (Page handles scroll) */}
-                <div className="flex-grow h-full overflow-hidden relative">
+                <div className="flex-grow h-full relative">
                     {children}
                 </div>
 

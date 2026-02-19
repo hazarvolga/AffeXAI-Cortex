@@ -272,7 +272,14 @@
 
   body {
     @apply bg-background text-foreground;
+    /* Chrome interaction fix: prevent unexpected overlays from blocking clicks */
+    isolation: isolate;
   }
+}
+
+/* Global Interaction Override */
+.pointer-events-auto-important {
+    pointer-events: auto !important;
 }
 
 /* Hide scrollbar but keep functionality */

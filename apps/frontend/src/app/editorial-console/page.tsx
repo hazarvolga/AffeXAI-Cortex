@@ -4,7 +4,7 @@ import React from 'react';
 
 export default function EditorialPage() {
     return (
-        <section className="relative w-full h-full bg-[#080808] editorial-grid flex flex-col overflow-hidden">
+        <section className="relative w-full h-full bg-[#080808] editorial-grid flex flex-col">
             {/* CSS for Grid Background (Scoped) */}
             <style jsx>{`
                 .editorial-grid {

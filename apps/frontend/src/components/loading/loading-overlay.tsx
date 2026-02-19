@@ -91,7 +91,9 @@ export function LoadingOverlay({
   return (
     <div
       className={cn(
-        'fixed inset-0 z-50 flex items-center justify-center',
+        'fixed inset-0 z-50 flex items-center justify-center transition-opacity duration-300',
+        !shouldShow && 'opacity-0 pointer-events-none',
+        shouldShow && 'opacity-100 pointer-events-auto',
         blur && 'backdrop-blur-sm',
         'bg-background/80',
         className
@@ -102,11 +104,11 @@ export function LoadingOverlay({
     >
       <div className="flex flex-col items-center gap-4 rounded-lg bg-card p-8 shadow-lg">
         {/* Spinner */}
-        <Loader2 
+        <Loader2
           className={cn(
             'animate-spin text-primary',
             spinnerSizes[spinnerSize]
-          )} 
+          )}
         />
 
         {/* Message */}
@@ -154,9 +156,9 @@ interface LoadingSpinnerProps {
   className?: string;
 }
 
-export function LoadingSpinner({ 
-  size = 'md', 
-  className 
+export function LoadingSpinner({
+  size = 'md',
+  className
 }: LoadingSpinnerProps) {
   const sizes = {
     sm: 'h-4 w-4',
@@ -165,12 +167,12 @@ export function LoadingSpinner({
   };
 
   return (
-    <Loader2 
+    <Loader2
       className={cn(
         'animate-spin',
         sizes[size],
         className
-      )} 
+      )}
     />
   );
 }
