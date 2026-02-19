@@ -49,12 +49,22 @@ export class StrategyService {
                 const searchResults = retrievalResponse.data.results;
 
                 if (searchResults && searchResults.length > 0) {
-                    ragContext = searchResults.map(res => {
-                        return `[Signal] ${res.content}`;
+                    // 🧠 NEURAL GRID: Sort by Success Score (Reciprocity)
+                    // 🧠 NEURAL GRID: Reciprocity Logic
+                    // Prioritize signals with high success scores in the context provided to the model
+                    const sortedSignals = [...searchResults].sort((a, b) =>
+                        (b.metadata?.successScore || 0) - (a.metadata?.successScore || 0)
+                    );
+
+                    ragContext = sortedSignals.map(res => {
+                        const score = res.metadata?.successScore;
+                        const scoreMarker = score ? ` [SUCCESS_LEVEL: ${score}]` : '';
+                        return `[Signal${scoreMarker}] ${res.content}`;
                     }).join('\n');
-                    this.logger.log(`RAG: Retrieved ${searchResults.length} relevant signals from Cortex.`);
+
+                    this.logger.log(`RAG: Retrieved ${searchResults.length} signals. Success-based prioritization applied.`);
                 } else {
-                    ragContext = "No relevant memory found in Cortex.";
+                    ragContext = "No prior success patterns found. Generating inaugural strategy.";
                 }
             } catch (err) {
                 this.logger.warn(`RAG Retrieval Connection failed: ${err.message}`);

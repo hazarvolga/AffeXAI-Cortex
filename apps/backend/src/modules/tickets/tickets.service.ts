@@ -1825,5 +1825,28 @@ IMPORTANT: Return ONLY the JSON object, no additional text, no markdown formatti
       neural_connection: true
     };
   }
+
+  /**
+   * [NEURAL GRID] Get intelligence and success-proven insights for a ticket
+   */
+  async getTicketSignal(id: string) {
+    const ticket = await this.findOne(id);
+
+    // Query StrategyService for insights grounded in prior successes
+    const context = `Support ticket query: ${ticket.subject}. Customer problem: ${ticket.description}`;
+    const insight = await this.strategyService.getInsight(
+      ticket.tenantId,
+      context,
+      `Existing tags: ${ticket.tags?.join(', ') || 'none'}`
+    );
+
+    return {
+      ticketId: id,
+      subject: ticket.subject,
+      aiInsight: insight.insight,
+      learningSource: insight.source,
+      timestamp: new Date()
+    };
+  }
 }
 
