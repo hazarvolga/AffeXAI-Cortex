@@ -45,6 +45,7 @@ import { FormsModule } from './modules/forms/forms.module';
 import { BccModule } from './modules/bcc/bcc.module';
 import { VectorStoreModule } from './core/vector-store/vector-store.module';
 import { NeuralGridModule } from './modules/neural-grid/neural-grid.module';
+import { NeuralCrawlerModule } from './modules/neural-crawler/neural-crawler.module';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
 import { TenantGuard } from './core/guards/tenant.guard';
@@ -120,6 +121,7 @@ import { TenantGuard } from './core/guards/tenant.guard';
     VectorStoreModule,
     BccModule,
     NeuralGridModule, // Phase 1: Neural Backbone
+    NeuralCrawlerModule, // Phase 5: External Intelligence
     ThrottlerModule.forRoot([{
       ttl: 60000,
       limit: 60,
