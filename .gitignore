@@ -200,3 +200,7 @@ desktop.ini
 .idea/
 *.sublime-project
 *.sublime-workspace
+
+# Analysis Directories
+old_affex/
+temp_analysis/

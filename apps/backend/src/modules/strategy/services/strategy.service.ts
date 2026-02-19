@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
+import { ConfigService } from '@nestjs/config';
 import { firstValueFrom } from 'rxjs';
 import { AiService } from '../../ai/ai.service';
 import { VectorStoreService } from '../../../core/vector-store/vector-store.service';
@@ -11,14 +12,17 @@ import { CreateFeedbackDto, FeedbackAction } from '../dto/create-feedback.dto';
 export class StrategyService {
     private readonly logger = new Logger(StrategyService.name);
     private readonly COLLECTION_NAME = 'brand_intelligence_signals';
-    private readonly CORTEX_URL = 'http://localhost:8000'; // Tunnel to Server 1
+    private readonly cortexUrl: string;
 
     constructor(
         private readonly aiService: AiService,
         private readonly vectorStore: VectorStoreService,
         private readonly commerceService: CommerceService,
-        private readonly httpService: HttpService
-    ) { }
+        private readonly httpService: HttpService,
+        private readonly configService: ConfigService
+    ) {
+        this.cortexUrl = this.configService.get<string>('cortex.url', 'http://localhost:8000');
+    }
 
     async getInsight(tenantId: string, context: string, draftContent?: string) {
         try {
@@ -35,7 +39,7 @@ export class StrategyService {
             let ragContext = '';
             try {
                 const retrievalResponse = await firstValueFrom(
-                    this.httpService.post(`${this.CORTEX_URL}/retrieve`, {
+                    this.httpService.post(`${this.cortexUrl}/retrieve`, {
                         query: context,
                         limit: 3,
                         tenantId: tenantId
@@ -93,33 +97,33 @@ export class StrategyService {
         this.logger.log(`[Signal Emitted] Tenant: ${tenantId}, Type: ${type}`);
 
         try {
-            // Ensure collection exists (lazy init)
-            await this.vectorStore.createCollection(this.COLLECTION_NAME);
+            // PHASE 0 FIX: Send Raw Signal to Cortex for Vectorization & Storage
+            // Instead of dummy vector, we delegate to the Brain.
 
-            // TODO: Generate Embedding for 'data'
-            const dummyVector = new Array(1024).fill(0); // Placeholder
+            const payload = {
+                id: data.id || `${Date.now()}`,
+                text: JSON.stringify(data), // Cortex expects 'text' to embed
+                type: type,
+                source: 'system-module',
+                timestamp: new Date().toISOString(),
+                tenantId: tenantId,
+                data: data // Send full object data
+            };
 
-            await this.vectorStore.upsert(this.COLLECTION_NAME, [{
-                id: Date.now(), // Simple ID generation
-                vector: dummyVector,
-                payload: {
-                    tenantId,
-                    type,
-                    content: JSON.stringify(data),
-                    timestamp: new Date().toISOString()
-                }
-            }]);
+            await firstValueFrom(
+                this.httpService.post(`${this.cortexUrl}/signals/ingest`, payload)
+            );
 
-            this.logger.log(`Signal persisted to Qdrant: ${this.COLLECTION_NAME}`);
+            this.logger.log(`Signal successfully transmitted to Neural Grid (Cortex).`);
 
-            // 0. Governance: Track Data Ingestion Cost (Optional: 1 token per signal or based on size)
-            // Even if we don't charge for it yet, we MUST track it for "Fair Use" policy.
+            // 0. Governance: Track Data Ingestion Cost
             const signalSize = JSON.stringify(data).length;
-            const estimatedCost = Math.ceil(signalSize / 100); // 1 token per 100 chars for storage/ingest
+            const estimatedCost = Math.ceil(signalSize / 100);
             await this.commerceService.logUsage(tenantId, estimatedCost, 'rag_ingestion', 'strategy_service_ingest');
 
         } catch (error) {
-            this.logger.warn(`Failed to ingest signal to RAG layer: ${error.message}`);
+            this.logger.warn(`Failed to transmit signal to Neural Grid: ${error.message}`);
+            // Fallback: Log to local DB or retry queue (Future)
         }
     }
 
@@ -175,10 +179,8 @@ export class StrategyService {
     async recordFeedback(tenantId: string, feedbackDto: CreateFeedbackDto) {
         this.logger.log(`[Feedback] Tenant: ${tenantId}, Action: ${feedbackDto.action}, Context: ${feedbackDto.contextId}`);
 
-        // 0. Governance Check (Rate Limiting for Feedback - Lighter limit)
-        // We use a different key or weight for feedback to encourage interaction but prevent spam.
-        // Assuming 'feedback_submission' is a tracked operation type.
-        const estimatedCost = 1; // Very cheap to submit feedback
+        // 0. Governance Check
+        const estimatedCost = 1;
         await this.commerceService.logUsage(tenantId, estimatedCost, 'feedback_submission', 'strategy_service_feedback');
 
         try {
@@ -191,31 +193,19 @@ export class StrategyService {
                 case FeedbackAction.EDIT: score = 0.2; break; // Engagement, but mixed signal
             }
 
-            // 2. Persist Feedback (Log for training)
-            // Ideally, we would update the weight of the specific RAG chunk in Qdrant if signalId is provided.
-            // For now, we log it to Qdrant as a 'training_example' for future fine-tuning.
-
-            await this.vectorStore.upsert(this.COLLECTION_NAME, [{
-                id: Date.now(),
-                vector: new Array(1024).fill(0), // Dummy vector
-                payload: {
-                    tenantId,
-                    type: 'FEEDBACK_SIGNAL',
-                    relatedSignalId: feedbackDto.signalId,
-                    contextId: feedbackDto.contextId,
-                    action: feedbackDto.action,
-                    score: score,
-                    comment: feedbackDto.comment,
-                    timestamp: new Date().toISOString()
-                }
-            }]);
+            // 2. Transmit Feeedback to Cortex (as a Signal)
+            // Feedback is just another type of signal for the Neural Grid
+            await this.emitSignal(tenantId, 'FEEDBACK_SIGNAL', {
+                ...feedbackDto,
+                score,
+                timestamp: new Date().toISOString()
+            });
 
             this.logger.log(`Feedback recorded with score: ${score}`);
             return { success: true, score };
 
         } catch (error) {
             this.logger.error(`Failed to record feedback: ${error.message}`);
-            // Don't block the user for a feedback failure, but log it.
             return { success: false, error: error.message };
         }
     }
