@@ -40,7 +40,7 @@ import {
 import { Separator } from '@/components/ui/separator';
 import { RichTextEditor } from '@/components/rich-text-editor';
 import { Toggle } from '@/components/ui/toggle';
-import { ticketsService, Ticket, TicketStatus, TicketPriority } from '@/lib/api/ticketsService';
+import { ticketsService, Ticket, TicketStatus, TicketPriority, NeuralTicketContext } from '@/lib/api/ticketsService';
 import { usersService, type User as ApiUser } from '@/lib/api/usersService';
 import { useToast } from '@/hooks/use-toast';
 
@@ -65,6 +65,8 @@ export default function TicketDetailPage({
   const [supportUsers, setSupportUsers] = useState<ApiUser[]>([]);
   const [assigningTicket, setAssigningTicket] = useState(false);
   const [updatingPriority, setUpdatingPriority] = useState(false);
+  const [neuralContext, setNeuralContext] = useState<NeuralTicketContext | null>(null);
+  const [loadingNeural, setLoadingNeural] = useState(false);
   const hasFetchedTicket = useRef(false);
   const hasFetchedUsers = useRef(false);
 
@@ -80,6 +82,9 @@ export default function TicketDetailPage({
         const ticketData = await ticketsService.getTicketById(ticketId);
         setTicket(ticketData);
         setError(null);
+
+        // Fetch Neural Insight concurrently
+        fetchNeuralInsight();
       } catch (err: any) {
         console.error('Error fetching ticket:', err);
         setError('Talep bilgileri yüklenirken bir hata oluştu.');
@@ -90,6 +95,18 @@ export default function TicketDetailPage({
 
     fetchTicket();
   }, [ticketId]);
+
+  const fetchNeuralInsight = async () => {
+    try {
+      setLoadingNeural(true);
+      const insight = await ticketsService.getNeuralContext(ticketId);
+      setNeuralContext(insight);
+    } catch (err) {
+      console.error('Failed to fetch neural insight:', err);
+    } finally {
+      setLoadingNeural(false);
+    }
+  };
 
   // Fetch support team users
   useEffect(() => {
@@ -351,6 +368,47 @@ export default function TicketDetailPage({
 
       {/* Sidebar */}
       <div className="space-y-6">
+        {/* --- 🧠 NEURAL SYNAPSE INSIGHTS --- */}
+        {(neuralContext || loadingNeural) && (
+          <Card className="border-purple-500/30 bg-purple-500/5 overflow-hidden relative group">
+            <div className="absolute top-0 left-0 w-1 h-full bg-purple-500 animate-pulse" />
+            <CardHeader className="pb-2">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-xs font-mono tracking-[0.2em] text-purple-400 flex items-center gap-2">
+                  <Brain className="h-3.5 w-3.5" /> NEURAL_SYNAPSE
+                </CardTitle>
+                <Badge variant="outline" className="text-[8px] border-purple-500/30 text-purple-400 bg-purple-500/10">
+                  AUTONOMOUS_INSIGHT
+                </Badge>
+              </div>
+              <CardDescription className="text-[10px] font-mono text-purple-300/50 uppercase tracking-tighter">
+                Grounded in high-reward historical patterns
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="pt-2">
+              {loadingNeural ? (
+                <div className="flex items-center gap-2 text-[10px] font-mono text-purple-400/60 py-4 italic">
+                  <RefreshCw className="h-3 w-3 animate-spin" /> Analyzing_neural_pathways...
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div className="p-3 bg-black/40 border border-purple-500/20 rounded font-mono text-[11px] leading-relaxed text-purple-100/90 shadow-inner">
+                    <span className="text-purple-400 uppercase font-bold mr-1">[AI_DIRECTIVE]:</span>
+                    {neuralContext?.aiInsight}
+                  </div>
+
+                  <div className="flex items-center justify-between text-[9px] font-mono text-white/30 uppercase tracking-widest">
+                    <span>Source: {neuralContext?.learningSource}</span>
+                    <span className="flex items-center gap-1">
+                      <Activity className="h-2.5 w-2.5 text-emerald-400" /> SYNC_ACTIVE
+                    </span>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
         <Card>
           <CardHeader>
             <CardTitle>Talep Yönetimi</CardTitle>

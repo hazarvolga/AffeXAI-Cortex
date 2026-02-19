@@ -101,9 +101,9 @@ export function AiCoPilot({ context, data, variant = 'floating', onApply }: AiCo
             {/* Header */}
             <div className="flex items-center justify-between p-4 border-b border-white/10 bg-white/5">
                 <div className="flex items-center gap-2">
-                    <div className="h-2 w-2 rounded-full bg-[#9df425] animate-pulse" />
-                    <span className="font-mono text-xs font-bold text-[#9df425] tracking-widest uppercase">
-                        CORTEX_LINK
+                    <div className="h-2 w-2 rounded-full bg-[#9df425] animate-pulse shadow-[0_0_8px_#9df425]" />
+                    <span className="font-mono text-[10px] font-bold text-[#9df425] tracking-widest uppercase">
+                        NEURAL_SYNAPSE_LINK
                     </span>
                 </div>
                 <div className="flex items-center gap-1">

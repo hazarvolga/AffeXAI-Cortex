@@ -103,7 +103,7 @@ export interface Ticket {
   };
   messages?: TicketMessage[];
   attachments?: TicketAttachment[];
-  
+
   // SLA Tracking Fields
   slaFirstResponseDueAt?: Date;
   slaResolutionDueAt?: Date;
@@ -113,7 +113,7 @@ export interface Ticket {
   firstResponseAt?: Date;
   resolvedAt?: Date;
   closedAt?: Date;
-  
+
   createdAt: Date;
   updatedAt: Date;
 }
@@ -186,7 +186,7 @@ export interface TicketStats {
   openTickets: number;
   resolvedToday: number;
   averageResponseTime: number;
-  
+
   // SLA Metrics
   sla: {
     breached: number;
@@ -197,12 +197,22 @@ export interface TicketStats {
 }
 
 /**
+ * Neural Context Interface
+ */
+export interface NeuralTicketContext {
+  ticketId: string;
+  subject: string;
+  aiInsight: string;
+  learningSource: string;
+  timestamp: Date;
+}
+
+/**
  * Tickets Service
- * Handles all ticket-related API operations with type safety
  */
 class TicketsService extends BaseApiService<Ticket, CreateTicketDto, UpdateTicketDto> {
   constructor() {
-    super({ 
+    super({
       endpoint: '/tickets',
       useWrappedResponses: true // Backend uses global ApiResponse wrapper
     });
@@ -212,8 +222,8 @@ class TicketsService extends BaseApiService<Ticket, CreateTicketDto, UpdateTicke
    * Get all tickets with optional filters
    */
   async getTickets(filters?: FilterTicketsDto): Promise<Ticket[]> {
-    const queryString = filters 
-      ? `?${new URLSearchParams(filters as any).toString()}` 
+    const queryString = filters
+      ? `?${new URLSearchParams(filters as any).toString()}`
       : '';
     return this.client.getWrapped<Ticket[]>(`${this.endpoint}${queryString}`);
   }
@@ -223,6 +233,13 @@ class TicketsService extends BaseApiService<Ticket, CreateTicketDto, UpdateTicke
    */
   async getTicketById(id: string): Promise<Ticket> {
     return this.client.getWrapped<Ticket>(`${this.endpoint}/${id}`);
+  }
+
+  /**
+   * [NEURAL GRID] Get intelligence and success-proven insights for a ticket
+   */
+  async getNeuralContext(id: string): Promise<NeuralTicketContext> {
+    return this.client.getWrapped<NeuralTicketContext>(`${this.endpoint}/${id}/neural-context`);
   }
 
   /**
@@ -278,9 +295,9 @@ class TicketsService extends BaseApiService<Ticket, CreateTicketDto, UpdateTicke
    * Close ticket (convenience method)
    */
   async closeTicket(id: string, notes?: string): Promise<Ticket> {
-    return this.updateTicketStatus(id, { 
-      status: TicketStatus.CLOSED, 
-      notes 
+    return this.updateTicketStatus(id, {
+      status: TicketStatus.CLOSED,
+      notes
     });
   }
 
@@ -288,9 +305,9 @@ class TicketsService extends BaseApiService<Ticket, CreateTicketDto, UpdateTicke
    * Resolve ticket (convenience method)
    */
   async resolveTicket(id: string, notes?: string): Promise<Ticket> {
-    return this.updateTicketStatus(id, { 
-      status: TicketStatus.RESOLVED, 
-      notes 
+    return this.updateTicketStatus(id, {
+      status: TicketStatus.RESOLVED,
+      notes
     });
   }
 
@@ -298,9 +315,9 @@ class TicketsService extends BaseApiService<Ticket, CreateTicketDto, UpdateTicke
    * Reopen ticket (convenience method)
    */
   async reopenTicket(id: string, notes?: string): Promise<Ticket> {
-    return this.updateTicketStatus(id, { 
-      status: TicketStatus.OPEN, 
-      notes 
+    return this.updateTicketStatus(id, {
+      status: TicketStatus.OPEN,
+      notes
     });
   }
 
