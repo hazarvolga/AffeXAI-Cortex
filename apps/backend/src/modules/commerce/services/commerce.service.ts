@@ -29,6 +29,81 @@ export class CommerceService {
         private mailService: MailService,
     ) { }
 
+    async onModuleInit() {
+        await this.seedDefaultData();
+    }
+
+    private async seedDefaultData() {
+        // 1. Ensure Enterprise Product & Price exists
+        let enterpriseProduct = await this.productRepo.findOne({ where: { name: 'Enterprise' } });
+        if (!enterpriseProduct) {
+            console.log('Seeding Enterprise Product...');
+            enterpriseProduct = await this.productRepo.save(this.productRepo.create({
+                name: 'Enterprise',
+                description: 'Full platform access for AffeXAI internal use',
+                active: true,
+                features: ['Audit', 'Commerce', 'AI', 'Unlimited Tokens']
+            }));
+        }
+
+        let enterprisePrice = await this.priceRepo.findOne({ where: { product: { id: enterpriseProduct.id } } });
+        if (!enterprisePrice) {
+            console.log('Seeding Enterprise Price...');
+            enterprisePrice = await this.priceRepo.save(this.priceRepo.create({
+                product: enterpriseProduct,
+                currency: 'usd',
+                amount: 250000, // $2,500.00
+                interval: 'month',
+                stripePriceId: 'price_fake_enterprise', // Mock ID
+                active: true
+            }));
+        }
+
+        // 2. Ensure AffeXAI Tenant Subscription
+        const defaultTenantId = 'affexai-main';
+        const existingSub = await this.subscriptionRepo.findOne({ where: { tenantId: defaultTenantId } });
+
+        if (!existingSub) {
+            console.log(`Seeding Subscription for ${defaultTenantId}...`);
+            await this.subscriptionRepo.save(this.subscriptionRepo.create({
+                tenantId: defaultTenantId,
+                status: SubscriptionStatus.ACTIVE,
+                price: enterprisePrice,
+                stripeSubscriptionId: 'sub_fake_affexai_internal',
+                currentPeriodStart: new Date(),
+                currentPeriodEnd: new Date(new Date().setFullYear(new Date().getFullYear() + 1))
+            }));
+        }
+
+        // 3. Ensure Usage Records (Dogfooding Data)
+        const usageCount = await this.usageRepo.count({ where: { tenantId: defaultTenantId } });
+        if (usageCount === 0) {
+            console.log(`Seeding Usage Records for ${defaultTenantId}...`);
+            const now = new Date();
+            const monthsToSeed = 6;
+            const records: UsageRecord[] = [];
+
+            for (let i = 0; i < monthsToSeed; i++) {
+                const date = new Date(now.getFullYear(), now.getMonth() - i, 15);
+                // Create random usage for this month
+                // Base usage + random variance to make chart look realistic
+                const baseTokens = 1000000 + (i * 50000); // Increasing usage over time (reverse order in loop, but date is past)
+
+                // We generate 5-10 records per month to simulate activity
+                for (let j = 0; j < 5; j++) {
+                    records.push(this.usageRepo.create({
+                        tenantId: defaultTenantId,
+                        serviceName: 'gpt-4',
+                        action: 'completion',
+                        tokensUsed: Math.floor((baseTokens / 5) * (0.8 + Math.random() * 0.4)), // Randomize around average
+                        timestamp: new Date(date.getTime() + j * 86400000) // Spread over days
+                    }));
+                }
+            }
+            await this.usageRepo.save(records);
+        }
+    }
+
     // --- Product Catalog ---
     async getProducts() {
         return this.productRepo.find({
