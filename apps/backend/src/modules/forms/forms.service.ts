@@ -1,4 +1,5 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 import { Form } from "./entities/form.entity";
@@ -14,6 +15,7 @@ export class FormsService {
     private readonly formRepository: Repository<Form>,
     @InjectRepository(FormSubmission)
     private readonly submissionRepository: Repository<FormSubmission>,
+    private readonly eventEmitter: EventEmitter2,
   ) { }
 
   async seedDefaultTemplates(tenantId: string): Promise<Form[]> {
@@ -132,6 +134,16 @@ export class FormsService {
     // Increment submission count
     form.submissionCount += 1;
     await this.formRepository.save(form);
+
+    // 🧠 NEURAL GRID SIGNAL: Form Submitted (Reward)
+    this.eventEmitter.emit('neural.signal', {
+      tenantId: tenantId,
+      source: 'forms',
+      type: 'form.submitted',
+      successScore: 2,
+      context: `Form "${form.name}" was submitted by ${submitFormDto.submittedBy || 'Anonymous'}`,
+      data: { formId: form.id, submittedBy: submitFormDto.submittedBy }
+    });
 
     return savedSubmission;
   }

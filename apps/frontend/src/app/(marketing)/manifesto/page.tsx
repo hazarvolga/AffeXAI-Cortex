@@ -16,9 +16,10 @@ const MODULES = [
     // NEURAL CORE (Brain)
     { id: 'cortex', layer: 'neural', name: 'Cortex (RAG)', desc: 'Vector Memory & Semantic Search (all-MiniLM-L6-v2)', inputs: ['Signals', 'Files', 'URLs'], outputs: ['Embeddings', 'Context'] },
     { id: 'strategy', layer: 'neural', name: 'Strategy Engine', desc: 'Decision Logic & AI Orchestrator', inputs: ['Context', 'Goals'], outputs: ['Actions', 'Signals'] },
+    { id: 'analytics', layer: 'neural', name: 'Insight Engine', desc: 'Autonomous Multi-module Strategy Engine', inputs: ['All Signals', 'MarketData'], outputs: ['Directives', 'Reports'] },
+    { id: 'crawler', layer: 'neural', name: 'Neural Crawler', desc: 'Autonomous Web & Social Intelligence Gathering', inputs: ['Keywords', 'Trends'], outputs: ['MarketSignals', 'Intelligence'] },
     { id: 'trust', layer: 'neural', name: 'Trust Dynamics', desc: 'Mathematical Trust Prediction Model', inputs: ['Resonance', 'Friction'], outputs: ['TrustScore', 'Prediction'] },
     { id: 'faq', layer: 'neural', name: 'FAQ Learning', desc: 'Self-improving Knowledge Loop', inputs: ['ChatLogs', 'Tickets'], outputs: ['NewQA', 'Signals'] },
-    { id: 'analytics', layer: 'neural', name: 'Insight Gen', desc: 'Pattern Recognition & Anomaly Detection', inputs: ['Metrics', 'Logs'], outputs: ['Alerts', 'Trends'] },
 
     // BUSINESS (Organs)
     { id: 'crm', layer: 'business', name: 'CRM Intelligence', desc: 'Customer "Neural Identity" & Scoring', inputs: ['UserActivity', 'Signals'], outputs: ['ResonanceScore'] },
@@ -66,7 +67,7 @@ export default function ManifestoPage() {
                     <span className="text-xs tracking-[0.3em] font-bold text-white/80">NEURAL GRID BLUEPRINT v2.0</span>
                 </div>
                 <div className="text-[10px] text-white/30">
-                    SYSTEM STATUS: <span className="text-green-500">PHASE 0 INITIATED</span>
+                    SYSTEM STATUS: <span className="text-purple-500 animate-pulse uppercase">PHASE 1: NEURAL GRID ACTIVE</span>
                 </div>
             </header>
 
@@ -233,9 +234,9 @@ export default function ManifestoPage() {
                             <div className="w-full md:w-1/4 text-center">
                                 <div className="text-[10px] uppercase tracking-widest text-white/40 mb-4">SOURCES</div>
                                 <div className="space-y-2">
-                                    <div className="bg-blue-500/20 border border-blue-500/50 p-3 rounded font-mono text-xs">Social Post</div>
-                                    <div className="bg-blue-500/20 border border-blue-500/50 p-3 rounded font-mono text-xs">Event Create</div>
-                                    <div className="bg-blue-500/20 border border-blue-500/50 p-3 rounded font-mono text-xs">Knowledge Doc</div>
+                                    <div className="bg-blue-500/20 border border-blue-500/50 p-3 rounded font-mono text-xs">Omni-Channel (EE-Signals)</div>
+                                    <div className="bg-purple-500/20 border border-purple-500/50 p-3 rounded font-mono text-xs italic">Neural Crawler (Web/X Intelligence)</div>
+                                    <div className="bg-blue-500/20 border border-blue-500/50 p-3 rounded font-mono text-xs">Success Multipliers (Rewards)</div>
                                 </div>
                             </div>
 
@@ -244,12 +245,12 @@ export default function ManifestoPage() {
 
                             {/* PROCESSING (THE FIX) */}
                             <div className="w-full md:w-1/4 text-center relative">
-                                <div className="text-[10px] uppercase tracking-widest text-green-400 mb-4 animate-pulse">PHASE 0: THE BRIDGE</div>
+                                <div className="text-[10px] uppercase tracking-widest text-green-400 mb-4 animate-pulse">PHASE 1: THE BACKBONE</div>
                                 <div className="bg-[#050505] border-2 border-green-500 p-6 rounded-xl shadow-[0_0_30px_rgba(34,197,94,0.2)]">
-                                    <div className="font-bold text-lg mb-2">Strategy Service</div>
-                                    <div className="text-xs text-white/50">Signal Ingestion</div>
+                                    <div className="font-bold text-lg mb-2">NeuralGrid Service</div>
+                                    <div className="text-xs text-white/50">Reward-Drive Ingestion</div>
                                     <div className="my-3 h-px bg-white/10"></div>
-                                    <div className="text-[10px] font-mono text-green-400">/signals/ingest (POST)</div>
+                                    <div className="text-[10px] font-mono text-green-400">@OnEvent('neural.signal')</div>
                                 </div>
                             </div>
 

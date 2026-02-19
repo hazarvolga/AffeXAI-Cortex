@@ -240,6 +240,15 @@ export class TicketsService {
     // Send real-time notification via WebSocket
     this.notificationsGateway.emitTicketCreated(savedTicket.id, userId, ticketWithRelations);
 
+    // 🧠 NEURAL GRID SIGNAL: Ticket Created (Context)
+    this.eventEmitter.emit('neural.signal', {
+      tenantId: activeTenantId,
+      source: 'tickets',
+      type: 'ticket.created',
+      context: `New ticket created: ${savedTicket.subject}. Description: ${dto.description}`,
+      data: { ticketId: savedTicket.id, priority: savedTicket.priority }
+    });
+
     return ticketWithRelations;
   }
 
@@ -413,6 +422,18 @@ export class TicketsService {
       userIds.push(ticket.assignedToId);
     }
     this.notificationsGateway.emitStatusChanged(id, oldStatus, status, userIds);
+
+    // 🧠 NEURAL GRID SIGNAL: Reward on Resolution
+    if (status === TicketStatus.RESOLVED) {
+      this.eventEmitter.emit('neural.signal', {
+        tenantId: activeTenantId,
+        source: 'tickets',
+        type: 'ticket.resolved',
+        successScore: 5,
+        context: `Ticket resolved successfully: ${ticket.subject}. Solution found in dialogue.`,
+        data: { ticketId: ticket.id, resolutionTime: ticket.resolutionTimeHours }
+      });
+    }
 
     return ticketWithRelations;
   }

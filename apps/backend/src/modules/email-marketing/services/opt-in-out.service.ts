@@ -1,4 +1,5 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Subscriber } from '../entities/subscriber.entity';
@@ -15,6 +16,7 @@ export class OptInOutService {
     private readonly subscriberRepository: Repository<Subscriber>,
     private readonly mailService: MailService,
     private readonly tenantService: TenantService,
+    private readonly eventEmitter: EventEmitter2,
   ) { }
 
   /**
@@ -168,6 +170,16 @@ export class OptInOutService {
 
     // Send goodbye email
     await this.sendGoodbyeEmail(subscriber);
+
+    // 🧠 NEURAL GRID SIGNAL: Negative Reward on Unsubscribe
+    this.eventEmitter.emit('neural.signal', {
+      tenantId: subscriber.tenantId,
+      source: 'email',
+      type: 'email.unsubscribed',
+      successScore: -10,
+      context: `Subscriber ${subscriber.email} unsubscribed. Reason: ${reason || 'Not provided'}`,
+      data: { subscriberId: subscriber.id, reason }
+    });
 
     return {
       success: true,

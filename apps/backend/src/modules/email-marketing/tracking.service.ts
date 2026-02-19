@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { EmailLog } from './entities/email-log.entity';
@@ -66,6 +67,7 @@ export class TrackingService {
     private emailOpenHistoryRepository: Repository<EmailOpenHistory>,
     private readonly tenantService: TenantService,
     private configService: ConfigService,
+    private readonly eventEmitter: EventEmitter2,
   ) {
     this.baseUrl = this.configService.get<string>('BASE_URL', 'http://localhost:9005');
   }
@@ -174,6 +176,16 @@ export class TrackingService {
         });
 
         await this.emailOpenHistoryRepository.save(openHistory);
+
+        // 🧠 NEURAL GRID SIGNAL: Email Opened
+        this.eventEmitter.emit('neural.signal', {
+          tenantId: emailLog.tenantId,
+          source: 'email',
+          type: 'email.opened',
+          successScore: 1,
+          context: `Email campaign ${emailLog.campaignId} was opened by ${emailLog.recipientEmail}`,
+          data: { campaignId: emailLog.campaignId, recipient: emailLog.recipientEmail }
+        });
       }
     }
   }
@@ -220,6 +232,16 @@ export class TrackingService {
 
     // Update subscriber statistics
     await this.updateSubscriberStats(emailLog.recipientEmail, 'clicks', emailLog.tenantId);
+
+    // 🧠 NEURAL GRID SIGNAL: Email Clicked
+    this.eventEmitter.emit('neural.signal', {
+      tenantId: emailLog.tenantId,
+      source: 'email',
+      type: 'email.clicked',
+      successScore: 5,
+      context: `Link clicked in email campaign ${emailLog.campaignId} by ${emailLog.recipientEmail}. URL: ${metadata.originalUrl}`,
+      data: { campaignId: emailLog.campaignId, recipient: emailLog.recipientEmail, url: metadata.originalUrl }
+    });
   }
 
   /**

@@ -1,53 +1,37 @@
-# CORTEX ZERO - Core Infrastructure Blueprint
-
-> **IMPORTANT:** This document is the primary source of truth for the AffeXAI Universal Neural Grid. Read this at the start of every session to understand the hybrid architecture and ongoing Phase 4 expansion.
-
-## 🏗️ Architecture Overview: The Hybrid Neural Grid
-
-AffeXAI uses a **Hybrid Cloud Intelligence** model.
-
-1.  **Body (Local Development):** The NestJS Backend (Apps/Backend) and Next.js Frontend.
-2.  **Brain (Oracle Cloud @ 161.118.171.201):** 
-    *   **Cortex AI Service:** The orchestration layer (Port 3000 -> Locally tunneled to 8000).
-    *   **Ollama:** Local LLM Execution (Port 11434).
-    *   **Qdrant:** High-fidelity Vector Database for RAG (Port 6333).
-
-## 🔌 Connection & Tunnels
-
-To keep the system alive, the **Hybrid Tunnel** must be running in the background:
-- **Command:** `./scripts/hybrid-tunnel.sh`
-- **Mapping:**
-  - Local `11434` -> Remote `11434` (Ollama)
-  - Local `6333` -> Remote `6333` (Qdrant)
-  - Local `8000` -> Remote `3000` (Cortex API) **<-- CRITICAL FIX**
-
-## 🧠 Universal Neural Grid Phase 4 Roadmap
-
-The goal is to transform AffeXAI from a monolithic silo into a self-learning neural system.
-
-### Phase 0: Entegrasyon (COMPLETED Feb 19, 2026)
-- **Fix:** Dummy vectors in `StrategyService` replaced with real Cortex Ingestion.
-- **Fix:** Backend crash due to missing `usage_records` metadata column resolved.
-- **Standard:** Cortex API now uses `tenantId` and `data` fields.
-
-### Phase 1: The Backbone (IN PROGRESS)
-- **Central Intelligence:** Building `NeuralGridService` to handle `EventEmitter` signals.
-- **Omni-Module Support:** Tickets, Social, Email, and Forms will all flow into this point.
-
-### Phase 2: Rewards Loop
-- **Score System:** Every action (Open, Click, Resolve) generates a success score (+/-).
-- **RAG Learning:** The system learns "successful strategies" vs "failed approaches".
-
-### Phase 3: The Synapse (UI)
-- **AiCoPilot Integration:** Displaying real-time intelligence from the Neural Grid across all pages.
-
-### Phase 4 & 5: Autonomous Growth
-- **Neural Crawler:** Autonomous web/X scraping for market signals.
-- **Insight Engine:** Proactive nightly analysis and strategy reporting.
-
-## 🛡️ Restore Point Info
-- **Restore Tag:** `neural-grid-phase-0-stable`
-- **Last Sync:** Feb 19, 04:40 AM (AEST)
+# CORTEX ZERO - Project Persistent Memory v1.0
+**Project:** AffexAI Universal Neural Grid
+**Identity:** Autonomous Multi-Tenant Intelligence & Ecosystem Command
 
 ---
-**Status: RESONANT 🟢**
+
+## 🧠 Core Architecture: Neural Grid Backbone
+The system is built on a central "Merkezi Sinir Sistemi" (Central Nervous System) called **Neural Grid Service**. 
+
+### 📡 Signal Protocols
+- All modules (Tickets, Social, Email, Forms) emit `neural.signal` via `EventEmitter2`.
+- **Standard Interface:** `NeuralSignal` (tenantId, source, type, successScore, context, data).
+- **Backbone Listener:** `NeuralGridService` in `apps/backend/src/modules/neural-grid`.
+
+### 🏆 Reward Logic (Current Integration)
+1. **Tickets:** `ticket.created` (Context), `ticket.resolved` (**+5 Reward**).
+2. **Social Media:** `post.created`. (High engagement analysis pending).
+3. **Email Marketing:** `email.opened` (**+1**), `email.clicked` (**+5**), `email.unsubscribed` (**-10 Penalty**).
+4. **Forms:** `form.submitted` (**+2**).
+
+---
+
+## 🎯 Development Roadmap (Cortex Vision)
+- **Phase 1 (Backbone):** [DONE] Central event bus and global ingestion service.
+- **Phase 2 (Omni-Channel):** [DONE] Integration across all key business modules.
+- **Phase 3 (Reciprocity):** [UP NEXT] Strategy Engine uses these rewards to adjust AI behavior via RAG.
+- **Phase 4 (Autonomy):** Final goal where the system autonomously generates strategies for each tenant based on learned "Success Signals".
+
+---
+
+## 🛠️ Critical Paths
+- **Backend Core:** `apps/backend/src/modules/neural-grid`
+- **Frontend Vision:** `apps/frontend/src/app/(marketing)/manifesto`
+- **Strategy Logic:** `apps/backend/src/modules/strategy/services/strategy.service.ts`
+
+> [!IMPORTANT]
+> If a server restart or session timeout occurs, read this file FIRST to restore implementation context.

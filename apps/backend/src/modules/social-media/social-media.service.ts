@@ -1,4 +1,5 @@
 import { Injectable, Logger, BadRequestException, NotFoundException, InternalServerErrorException } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -48,6 +49,7 @@ export class SocialMediaService {
         private readonly keyManagementService: KeyManagementService,
         private readonly s3Service: S3Service,
         private readonly bccService: BccService,
+        private readonly eventEmitter: EventEmitter2,
     ) {
         this.providers.set(SocialProvider.TWITTER, twitterProvider);
         this.providers.set(SocialProvider.LINKEDIN, linkedinProvider);
@@ -238,17 +240,13 @@ export class SocialMediaService {
 
             this.logger.log(`Post ${savedPost.id} enqueued for dispatch with delay ${delay}ms`);
 
-            // 3. RAG Loop (Async Fire-and-Forget)
-            // We do NOT await this to ensure API velocity for 1000+ tenants.
-            this.strategyService.emitSignal(user.tenantId, 'SOCIAL_POST_CREATED', {
-                postId: savedPost.id,
-                content: savedPost.content,
-                platform: account.provider,
-                accountId: account.id,
-                authorId: user.id
-            }).catch(err => {
-                this.logger.warn(`Failed to emit RAG signal for post ${savedPost.id}: ${err.message}`);
-                // Silent fail is acceptable for auxiliary memory features
+            // 3. 🧠 NEURAL GRID SIGNAL: Post Created
+            this.eventEmitter.emit('neural.signal', {
+                tenantId: user.tenantId,
+                source: 'social',
+                type: 'post.created',
+                context: `New social post created for ${account.provider}: ${savedPost.content}`,
+                data: { postId: savedPost.id, platform: account.provider }
             });
         }
 

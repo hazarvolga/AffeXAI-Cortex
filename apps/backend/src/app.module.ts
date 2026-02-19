@@ -44,6 +44,7 @@ import { TrustDynamicsModule } from './modules/trust-dynamics/trust-dynamics.mod
 import { FormsModule } from './modules/forms/forms.module';
 import { BccModule } from './modules/bcc/bcc.module';
 import { VectorStoreModule } from './core/vector-store/vector-store.module';
+import { NeuralGridModule } from './modules/neural-grid/neural-grid.module';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
 import { TenantGuard } from './core/guards/tenant.guard';
@@ -55,7 +56,7 @@ import { TenantGuard } from './core/guards/tenant.guard';
     LoggingModule, // Add logging module globally
     EventEmitterModule.forRoot({
       // Use this instance across the entire Nest application
-      wildcard: false,
+      wildcard: true,
       delimiter: '.',
       newListener: false,
       removeListener: false,
@@ -113,12 +114,12 @@ import { TenantGuard } from './core/guards/tenant.guard';
     SystemLogsModule, // Add system logs API
     DatabaseImportModule, // Temporary SQL import endpoint (production only)
     BackupModule, // Backup system with cloud integration
-    SocialMediaModule,
     BrandModule,
     TrustDynamicsModule,
     FormsModule,
     VectorStoreModule,
     BccModule,
+    NeuralGridModule, // Phase 1: Neural Backbone
     ThrottlerModule.forRoot([{
       ttl: 60000,
       limit: 60,
