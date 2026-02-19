@@ -16,7 +16,11 @@ const SettingsSchema = z.object({
   email: z.string().email('Geçerli bir e-posta adresi girin.'),
   defaultTitle: z.string(),
   defaultDescription: z.string(),
-  // Social media fields are dynamic, so we'll handle them separately.
+  // Strategic Radar fields
+  radarEnabled: z.boolean().optional(),
+  radarCycle: z.enum(['weekly', 'bi-weekly', 'monthly', 'daily']).optional(),
+  radarCompetitors: z.string().optional(), // JSON string from frontend
+  radarKeywords: z.string().optional(), // JSON string from frontend
 });
 
 export type SaveSettingsState = {
@@ -85,6 +89,10 @@ export async function saveSiteSettings(
     email,
     defaultTitle,
     defaultDescription,
+    radarEnabled: formData.get('radarEnabled') === 'on',
+    radarCycle: (formData.get('radarCycle') as any) || 'weekly',
+    radarCompetitors: getFormValue('radarCompetitors'),
+    radarKeywords: getFormValue('radarKeywords'),
   });
 
   console.log('Frontend validation result:', validatedFields);
@@ -124,6 +132,17 @@ export async function saveSiteSettings(
       defaultTitle: validatedFields.data.defaultTitle,
       defaultDescription: validatedFields.data.defaultDescription,
     },
+    strategicRadar: {
+      competitors: {
+        enabled: validatedFields.data.radarEnabled || false,
+        urls: JSON.parse(validatedFields.data.radarCompetitors || '[]'),
+      },
+      focusPulse: {
+        enabled: validatedFields.data.radarEnabled || false,
+        keywords: JSON.parse(validatedFields.data.radarKeywords || '[]'),
+      },
+      reportingCycle: validatedFields.data.radarCycle || 'weekly',
+    }
   };
 
   console.log('Settings to be sent to backend:', newSettings);

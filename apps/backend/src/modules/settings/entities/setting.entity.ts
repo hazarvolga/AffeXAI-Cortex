@@ -9,6 +9,7 @@ export enum SettingCategory {
   SOCIAL_MEDIA = 'social_media',
   ANALYTICS = 'analytics',
   STORAGE = 'storage',
+  STRATEGIC_RADAR = 'strategic_radar',
 }
 
 /**

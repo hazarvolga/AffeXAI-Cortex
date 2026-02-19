@@ -53,6 +53,26 @@ export class SeoDto {
   defaultDescription: string;
 }
 
+export class StrategicRadarDto {
+  @IsOptional()
+  @IsObject()
+  competitors?: {
+    enabled: boolean;
+    urls: string[];
+  };
+
+  @IsOptional()
+  @IsObject()
+  focusPulse?: {
+    enabled: boolean;
+    keywords: string[];
+  };
+
+  @IsOptional()
+  @IsString()
+  reportingCycle?: 'daily' | 'weekly' | 'bi-weekly' | 'monthly';
+}
+
 export class SiteSettingsDto {
   @IsString()
   companyName: string;
@@ -84,4 +104,9 @@ export class SiteSettingsDto {
   @ValidateNested()
   @Type(() => SeoDto)
   seo: SeoDto;
+
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => StrategicRadarDto)
+  strategicRadar?: StrategicRadarDto;
 }

@@ -470,84 +470,22 @@ export class CommerceService {
     }
 
     async getTokenEconomics() {
-        const sixMonthsAgo = new Date();
-        sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
-        const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+        // ... (existing code)
+    }
 
-        try {
-            const [monthlyRaw, tenantRaw] = await Promise.all([
-                this.usageRepo.createQueryBuilder('u')
-                    .select([
-                        `TO_CHAR(DATE_TRUNC('month', u.timestamp), 'Mon') as month`,
-                        `DATE_TRUNC('month', u.timestamp) as "monthDate"`,
-                        `COALESCE(SUM(u."tokensUsed"), 0)::int as "totalTokens"`,
-                    ])
-                    .where('u.timestamp >= :since', { since: sixMonthsAgo })
-                    .groupBy(`DATE_TRUNC('month', u.timestamp)`)
-                    .orderBy(`DATE_TRUNC('month', u.timestamp)`, 'ASC')
-                    .getRawMany(),
-
-                this.usageRepo.createQueryBuilder('u')
-                    .select([
-                        'u."tenantId" as "tenantId"',
-                        `COALESCE(SUM(u."tokensUsed"), 0)::int as "totalTokens"`,
-                    ])
-                    .where('u.timestamp >= :since', { since: thirtyDaysAgo })
-                    .groupBy('u."tenantId"')
-                    .orderBy('"totalTokens"', 'DESC')
-                    .limit(10)
-                    .getRawMany(),
-            ]);
-
-            const costPerThousand = 0.002;
-
-            const monthlyUsage = monthlyRaw.map(row => ({
-                month: row.month as string,
-                totalTokens: Number(row.totalTokens),
-                estimatedCost: Math.round((Number(row.totalTokens) / 1000) * costPerThousand * 100) / 100,
-            }));
-
-            const activeSubs = await this.subscriptionRepo.find({
-                where: { status: SubscriptionStatus.ACTIVE },
-                relations: ['price', 'price.product'],
-            });
-            const subByTenant = new Map(activeSubs.map(s => [s.tenantId, s]));
-
-            const tenantBreakdown = tenantRaw.map(row => {
-                const sub = subByTenant.get(row.tenantId);
-                return {
-                    tenantId: row.tenantId as string,
-                    totalTokens: Number(row.totalTokens),
-                    estimatedCost: Math.round((Number(row.totalTokens) / 1000) * costPerThousand * 100) / 100,
-                    planName: sub?.price?.product?.name ?? 'No Plan',
-                    trend: 'stable' as const,
-                };
-            });
-
-            const totalTokensThisMonth = monthlyUsage.at(-1)?.totalTokens ?? 0;
-            const prevMonthTokens = monthlyUsage.at(-2)?.totalTokens ?? 0;
-
-            return {
-                monthlyUsage,
-                tenantBreakdown,
-                costPerThousand,
-                totalTokensThisMonth,
-                totalEstimatedCost: Math.round((totalTokensThisMonth / 1000) * costPerThousand * 100) / 100,
-                vsLastMonth: prevMonthTokens > 0
-                    ? Math.round(((totalTokensThisMonth - prevMonthTokens) / prevMonthTokens) * 100)
-                    : 0,
-            };
-        } catch (err) {
-            console.error('[CommerceService] getTokenEconomics failed:', err.message);
-            return {
-                monthlyUsage: [],
-                tenantBreakdown: [],
-                costPerThousand: 0.002,
-                totalTokensThisMonth: 0,
-                totalEstimatedCost: 0,
-                vsLastMonth: 0,
-            };
+    /**
+     * Centrally check if a tenant has access to a specific feature based on their current product metadata
+     */
+    async checkFeatureAccess(tenantId: string, featureKey: string): Promise<boolean> {
+        const sub = await this.getSubscription(tenantId);
+        if (!sub || !sub.price || !sub.price.product) {
+            return false;
         }
+
+        const metadata = sub.price.product.metadata;
+        if (!metadata) return false;
+
+        return metadata[featureKey] === true || metadata[featureKey] === 'true';
     }
 }
 

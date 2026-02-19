@@ -6,11 +6,14 @@ import { Setting } from './entities/setting.entity';
 import { DNSVerificationService } from './dns-verification.service';
 import { KeyManagementService } from '../../core/shared/services/key-management.service';
 import { TenantModule } from '../../core/tenant/tenant.module';
+import { CommerceModule } from '../commerce/commerce.module';
+import { forwardRef } from '@nestjs/common';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Setting]),
     TenantModule,
+    forwardRef(() => CommerceModule),
   ],
   controllers: [SettingsController],
   providers: [SettingsService, DNSVerificationService, KeyManagementService],

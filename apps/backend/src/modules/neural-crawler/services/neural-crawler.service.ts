@@ -6,6 +6,11 @@ import { firstValueFrom } from 'rxjs';
 import { CrawlQueueService } from './crawl-queue.service';
 import { NeuralSignal } from '../../neural-grid/interfaces/neural-signal.interface';
 
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { Organization } from '../../organizations/entities/organization.entity';
+import { SettingsService } from '../../settings/settings.service';
+
 @Injectable()
 export class NeuralCrawlerService {
     private readonly logger = new Logger(NeuralCrawlerService.name);
@@ -14,6 +19,9 @@ export class NeuralCrawlerService {
         private readonly httpService: HttpService,
         private readonly eventEmitter: EventEmitter2,
         private readonly queueService: CrawlQueueService,
+        @InjectRepository(Organization)
+        private readonly orgRepo: Repository<Organization>,
+        private readonly settingsService: SettingsService,
     ) { }
 
     /**
@@ -51,23 +59,61 @@ export class NeuralCrawlerService {
         });
     }
 
-    /**
-   * [NEURAL GRID] Automated Nightly Intelligence Gathering
-   * Triggered at 2 AM
-   */
     @Cron(CronExpression.EVERY_DAY_AT_2AM)
     async handleNightlyCrawl() {
         this.logger.log('[NeuralCrawler] Starting nightly autonomous intelligence scan...');
-        // In a multi-tenant system, we'd iterate over active tenants
-        // For MVP, we use a generic placeholder or the main tenant
-        const mockTenants = ['system-default'];
 
-        for (const tenantId of mockTenants) {
-            // 1. Reputation Scan
-            await this.processTarget(tenantId, 'https://news.google.com/search?q=AffeXAI', 'REPUTATION');
+        // Fetch all active tenants
+        const organizations = await this.orgRepo.find({ where: { isActive: true } });
+        const now = new Date();
+        const dayOfWeek = now.getDay(); // 0-6 (Sunday-Saturday)
 
-            // 2. Competitor Scan (Placeholder URL)
-            await this.processTarget(tenantId, 'https://competitor.example.com/blog', 'COMPETITOR');
+        for (const org of organizations) {
+            const tenantId = org.slug || org.id;
+
+            try {
+                // Get tenant specific Strategic Radar settings
+                const settings = await this.settingsService.getSiteSettings(tenantId);
+                const radar = settings.strategicRadar;
+
+                if (!radar || !radar.competitors?.enabled && !radar.focusPulse?.enabled) {
+                    this.logger.debug(`[NeuralCrawler] Skipping tenant ${tenantId}: Radar disabled.`);
+                    continue;
+                }
+
+                // Check reporting cycle (Safe staggered execution)
+                const cycle = radar.reportingCycle || 'weekly';
+                const shouldCrawlToday =
+                    cycle === 'daily' ||
+                    (cycle === 'weekly' && dayOfWeek === 1) || // Mondays
+                    (cycle === 'bi-weekly' && (dayOfWeek === 1 && Math.floor(now.getDate() / 7) % 2 === 0)) ||
+                    (cycle === 'monthly' && now.getDate() === 1);
+
+                if (!shouldCrawlToday) {
+                    this.logger.debug(`[NeuralCrawler] Skipping tenant ${tenantId}: Cycle ${cycle} is not due today.`);
+                    continue;
+                }
+
+                this.logger.log(`[NeuralCrawler] Executing Radar for Tenant: ${tenantId}`);
+
+                // 1. Competitor Scan
+                if (radar.competitors?.enabled && radar.competitors.urls.length > 0) {
+                    for (const url of radar.competitors.urls) {
+                        await this.processTarget(tenantId, url, 'COMPETITOR');
+                    }
+                }
+
+                // 2. Focus Pulse (Keyword Scan)
+                if (radar.focusPulse?.enabled && radar.focusPulse.keywords.length > 0) {
+                    for (const keyword of radar.focusPulse.keywords) {
+                        const searchUrl = `https://news.google.com/search?q=${encodeURIComponent(keyword)}`;
+                        await this.processTarget(tenantId, searchUrl, 'REPUTATION');
+                    }
+                }
+
+            } catch (err) {
+                this.logger.error(`[NeuralCrawler] Intelligence failed for tenant ${tenantId}: ${err.message}`);
+            }
         }
     }
 

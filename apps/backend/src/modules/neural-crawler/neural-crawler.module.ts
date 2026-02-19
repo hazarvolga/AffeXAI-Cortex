@@ -6,8 +6,16 @@ import { IntelSearchService } from './services/intel-search.service';
 
 import { NeuralCrawlerController } from './neural-crawler.controller';
 
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { Organization } from '../organizations/entities/organization.entity';
+import { SettingsModule } from '../settings/settings.module';
+
 @Module({
-    imports: [HttpModule],
+    imports: [
+        HttpModule,
+        TypeOrmModule.forFeature([Organization]),
+        SettingsModule,
+    ],
     controllers: [NeuralCrawlerController],
     providers: [NeuralCrawlerService, CrawlQueueService, IntelSearchService],
     exports: [NeuralCrawlerService],

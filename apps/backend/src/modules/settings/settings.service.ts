@@ -24,7 +24,7 @@ import {
   StorageProvider,
 } from './dto/storage-settings.dto';
 import { KeyManagementService, AiProviderType } from '../../core/shared/services/key-management.service';
-import { TenantService } from '../../core/tenant/tenant.service';
+import { CommerceService } from '../commerce/commerce.service';
 
 @Injectable()
 export class SettingsService {
@@ -35,6 +35,8 @@ export class SettingsService {
     private settingsRepository: Repository<Setting>,
     private keyManagementService: KeyManagementService,
     private tenantService: TenantService,
+    @Inject(forwardRef(() => CommerceService))
+    private commerceService: CommerceService,
   ) { }
 
   /**
@@ -120,6 +122,17 @@ export class SettingsService {
         defaultTitle: this.getSettingValue(settings, SettingCategory.COMPANY, 'seo.defaultTitle', 'Aluplan Digital - AEC Çözümleri'),
         defaultDescription: this.getSettingValue(settings, SettingCategory.COMPANY, 'seo.defaultDescription', 'AEC profesyonelleri için en gelişmiş dijital çözümler ve uzman desteği.'),
       },
+      strategicRadar: {
+        competitors: {
+          enabled: this.getSettingValue(settings, SettingCategory.STRATEGIC_RADAR, 'competitors.enabled', 'false') === 'true',
+          urls: JSON.parse(this.getSettingValue(settings, SettingCategory.STRATEGIC_RADAR, 'competitors.urls', '[]')),
+        },
+        focusPulse: {
+          enabled: this.getSettingValue(settings, SettingCategory.STRATEGIC_RADAR, 'focusPulse.enabled', 'false') === 'true',
+          keywords: JSON.parse(this.getSettingValue(settings, SettingCategory.STRATEGIC_RADAR, 'focusPulse.keywords', '[]')),
+        },
+        reportingCycle: this.getSettingValue(settings, SettingCategory.STRATEGIC_RADAR, 'reportingCycle', 'weekly') as any,
+      },
     };
 
     return siteSettings;
@@ -141,10 +154,26 @@ export class SettingsService {
     await this.updateOrCreateSetting(SettingCategory.COMPANY, 'seo.defaultTitle', settingsDto.seo.defaultTitle, activeTenantId);
     await this.updateOrCreateSetting(SettingCategory.COMPANY, 'seo.defaultDescription', settingsDto.seo.defaultDescription, activeTenantId);
 
-    // Update social media settings
-    for (const [platform, url] of Object.entries(settingsDto.socialMedia)) {
-      if (url !== undefined) {
-        await this.updateOrCreateSetting(SettingCategory.SOCIAL_MEDIA, platform, url as string, activeTenantId);
+    // Update Strategic Radar settings
+    if (settingsDto.strategicRadar) {
+      if (settingsDto.strategicRadar.competitors) {
+        await this.updateOrCreateSetting(SettingCategory.STRATEGIC_RADAR, 'competitors.enabled', String(settingsDto.strategicRadar.competitors.enabled), activeTenantId);
+        await this.updateOrCreateSetting(SettingCategory.STRATEGIC_RADAR, 'competitors.urls', JSON.stringify(settingsDto.strategicRadar.competitors.urls), activeTenantId);
+      }
+      if (settingsDto.strategicRadar.focusPulse) {
+        await this.updateOrCreateSetting(SettingCategory.STRATEGIC_RADAR, 'focusPulse.enabled', String(settingsDto.strategicRadar.focusPulse.enabled), activeTenantId);
+        await this.updateOrCreateSetting(SettingCategory.STRATEGIC_RADAR, 'focusPulse.keywords', JSON.stringify(settingsDto.strategicRadar.focusPulse.keywords), activeTenantId);
+      }
+      if (settingsDto.strategicRadar.reportingCycle) {
+        let cycle = settingsDto.strategicRadar.reportingCycle;
+        if (cycle === 'daily') {
+          const hasDailyAccess = await this.commerceService.checkFeatureAccess(activeTenantId, 'radar_daily_enabled');
+          if (!hasDailyAccess) {
+            this.logger.warn(`Tenant ${activeTenantId} attempted to set daily reporting cycle without premium access. Falling back to weekly.`);
+            cycle = 'weekly';
+          }
+        }
+        await this.updateOrCreateSetting(SettingCategory.STRATEGIC_RADAR, 'reportingCycle', cycle, activeTenantId);
       }
     }
 

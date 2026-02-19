@@ -79,6 +79,15 @@ export default function SiteSettingsPage() {
     const [selectedEmailService, setSelectedEmailService] = useState('resend');
     const [templateSearch, setTemplateSearch] = useState('');
     const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
+
+    // Strategic Radar State
+    const [radarCompetitors, setRadarCompetitors] = useState<string[]>([]);
+    const [newCompetitor, setNewCompetitor] = useState('');
+    const [radarKeywords, setRadarKeywords] = useState<string[]>([]);
+    const [newKeyword, setNewKeyword] = useState('');
+    const [radarCycle, setRadarCycle] = useState('weekly');
+    const [isRadarEnabled, setIsRadarEnabled] = useState(false);
+
     const { toast } = useToast();
 
     const initialState: SaveSettingsState = { message: '', success: false };
@@ -101,6 +110,14 @@ export default function SiteSettingsPage() {
                     }
                 }
                 setDynamicSocials(socialMediaFormatted);
+
+                // Initialize Strategic Radar state
+                if (settings.strategicRadar) {
+                    setRadarCompetitors(settings.strategicRadar.competitors?.urls || []);
+                    setRadarKeywords(settings.strategicRadar.focusPulse?.keywords || []);
+                    setRadarCycle(settings.strategicRadar.reportingCycle || 'weekly');
+                    setIsRadarEnabled(settings.strategicRadar.competitors?.enabled || false);
+                }
             } catch (error) {
                 console.error('Failed to fetch current settings:', error);
                 // Fallback to static data
@@ -224,7 +241,7 @@ export default function SiteSettingsPage() {
                             <TabsTrigger value="company" className="data-[state=active]:bg-[#ff8c00] data-[state=active]:text-black text-[10px] uppercase tracking-widest px-8">Company</TabsTrigger>
                             <TabsTrigger value="email" className="data-[state=active]:bg-[#ff8c00] data-[state=active]:text-black text-[10px] uppercase tracking-widest px-8">Email Settings</TabsTrigger>
                             <TabsTrigger value="storage" className="data-[state=active]:bg-[#ff8c00] data-[state=active]:text-black text-[10px] uppercase tracking-widest px-8">Storage</TabsTrigger>
-                            <TabsTrigger value="analytics" className="data-[state=active]:bg-[#ff8c00] data-[state=active]:text-black text-[10px] uppercase tracking-widest px-8">Analytics</TabsTrigger>
+                            <TabsTrigger value="radar" className="data-[state=active]:bg-[#ff8c00] data-[state=active]:text-black text-[10px] uppercase tracking-widest px-8">Strategic Radar</TabsTrigger>
                         </TabsList>
 
                         <TabsContent value="company" className="mt-0 space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -536,25 +553,174 @@ export default function SiteSettingsPage() {
                             </div>
                         </TabsContent>
 
-                        <TabsContent value="analytics" className="mt-0 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                        <TabsContent value="radar" className="mt-0 animate-in fade-in slide-in-from-bottom-4 duration-500">
                             <Card className="bcc-glass border-none bg-white/[0.02]">
                                 <CardHeader className="border-b border-white/5">
                                     <div className="flex items-center gap-3">
                                         <div className="w-1 h-6 bg-[#ff8c00]"></div>
                                         <div>
-                                            <CardTitle className="text-xs uppercase tracking-[0.3em] font-bold">Analytics Nodes</CardTitle>
-                                            <CardDescription className="text-[10px] uppercase text-white/40 tracking-wider">Telemetry modules for behavioral sequence tracking.</CardDescription>
+                                            <CardTitle className="text-xs uppercase tracking-[0.3em] font-bold">Strategic Radar Control</CardTitle>
+                                            <CardDescription className="text-[10px] uppercase text-white/40 tracking-wider">Configure autonomous intelligence gathering nodes and reporting cycles.</CardDescription>
                                         </div>
                                     </div>
                                 </CardHeader>
-                                <CardContent className="pt-8 space-y-6">
-                                    <Alert className="bg-white/5 border-white/10">
-                                        <AlertCircle className="h-4 w-4 text-[#ff8c00]" />
-                                        <AlertTitle className="text-[#ff8c00] uppercase tracking-widest text-[10px] font-bold">Dikkat</AlertTitle>
-                                        <AlertDescription className="text-white/60 text-[10px]">
-                                            Analytics yapılandırmaları henüz tamamlanmadı. Lütfen daha sonra tekrar kontrol edin.
-                                        </AlertDescription>
-                                    </Alert>
+                                <CardContent className="pt-8 space-y-10">
+                                    {/* Master Switch */}
+                                    <div className="flex items-center justify-between p-4 bg-white/5 border border-white/10 rounded-sm">
+                                        <div className="space-y-0.5">
+                                            <Label className="text-[10px] uppercase tracking-widest text-white/80 font-bold">Radar Activation</Label>
+                                            <p className="text-[10px] text-white/30 italic">Enable or disable autonomous crawling for this tenant.</p>
+                                        </div>
+                                        <Checkbox
+                                            id="radarEnabled"
+                                            name="radarEnabled"
+                                            checked={isRadarEnabled}
+                                            onCheckedChange={(checked) => setIsRadarEnabled(checked as boolean)}
+                                            className="data-[state=checked]:bg-[#ff8c00]"
+                                        />
+                                    </div>
+
+                                    <div className="grid md:grid-cols-2 gap-8">
+                                        {/* Competitors Management */}
+                                        <div className="space-y-4">
+                                            <div className="flex items-center gap-2">
+                                                <Tv className="h-3 w-3 text-[#ff8c00]" />
+                                                <Label className="text-[10px] uppercase tracking-widest text-[#ff8c00] font-bold">Target Radar (Competitors)</Label>
+                                            </div>
+                                            <div className="flex gap-2">
+                                                <Input
+                                                    placeholder="https://rakip-site.com"
+                                                    className="bg-white/5 border-white/10 text-xs"
+                                                    value={newCompetitor}
+                                                    onChange={(e) => setNewCompetitor(e.target.value)}
+                                                />
+                                                <Button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        if (newCompetitor && !radarCompetitors.includes(newCompetitor)) {
+                                                            setRadarCompetitors([...radarCompetitors, newCompetitor]);
+                                                            setNewCompetitor('');
+                                                        }
+                                                    }}
+                                                    className="bg-[#ff8c00] text-black hover:bg-[#ff8c00]/80 h-9 px-3"
+                                                >
+                                                    <PlusCircle className="h-4 w-4" />
+                                                </Button>
+                                            </div>
+                                            <ScrollArea className="h-32 w-full rounded-sm border border-white/5 bg-black/20 p-3">
+                                                <div className="space-y-2">
+                                                    {radarCompetitors.map((url, i) => (
+                                                        <div key={i} className="flex items-center justify-between group">
+                                                            <span className="text-[10px] text-white/60 font-mono truncate max-w-[200px]">{url}</span>
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => setRadarCompetitors(radarCompetitors.filter((_, idx) => idx !== i))}
+                                                                className="text-white/20 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all"
+                                                            >
+                                                                <Trash2 className="h-3 w-3" />
+                                                            </button>
+                                                        </div>
+                                                    ))}
+                                                    {radarCompetitors.length === 0 && <p className="text-[10px] text-white/20 italic">No competitors tracked.</p>}
+                                                </div>
+                                            </ScrollArea>
+                                            <input type="hidden" name="radarCompetitors" value={JSON.stringify(radarCompetitors)} />
+                                        </div>
+
+                                        {/* Focus Pulse Management */}
+                                        <div className="space-y-4">
+                                            <div className="flex items-center gap-2">
+                                                <Bot className="h-3 w-3 text-[#ff8c00]" />
+                                                <Label className="text-[10px] uppercase tracking-widest text-[#ff8c00] font-bold">Focus Pulse (Keywords)</Label>
+                                            </div>
+                                            <div className="flex gap-2">
+                                                <Input
+                                                    placeholder="AI, E-commerce, Marketing..."
+                                                    className="bg-white/5 border-white/10 text-xs"
+                                                    value={newKeyword}
+                                                    onChange={(e) => setNewKeyword(e.target.value)}
+                                                />
+                                                <Button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        if (newKeyword && !radarKeywords.includes(newKeyword)) {
+                                                            setRadarKeywords([...radarKeywords, newKeyword]);
+                                                            setNewKeyword('');
+                                                        }
+                                                    }}
+                                                    className="bg-[#ff8c00] text-black hover:bg-[#ff8c00]/80 h-9 px-3"
+                                                >
+                                                    <PlusCircle className="h-4 w-4" />
+                                                </Button>
+                                            </div>
+                                            <ScrollArea className="h-32 w-full rounded-sm border border-white/5 bg-black/20 p-3">
+                                                <div className="flex flex-wrap gap-2">
+                                                    {radarKeywords.map((kw, i) => (
+                                                        <div key={i} className="flex items-center gap-1.5 px-2 py-1 bg-white/5 border border-white/5 rounded-full group">
+                                                            <span className="text-[9px] text-white/50 uppercase tracking-tighter">{kw}</span>
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => setRadarKeywords(radarKeywords.filter((_, idx) => idx !== i))}
+                                                                className="text-white/20 hover:text-red-500"
+                                                            >
+                                                                <Trash2 className="h-2.5 w-2.5" />
+                                                            </button>
+                                                        </div>
+                                                    ))}
+                                                    {radarKeywords.length === 0 && <p className="text-[10px] text-white/20 italic">No focus keywords.</p>}
+                                                </div>
+                                            </ScrollArea>
+                                            <input type="hidden" name="radarKeywords" value={JSON.stringify(radarKeywords)} />
+                                        </div>
+                                    </div>
+
+                                    <div className="h-px bg-white/5 w-full" />
+
+                                    {/* Reporting Cycle & Gating */}
+                                    <div className="space-y-6">
+                                        <div className="flex items-center gap-2">
+                                            <Clock className="h-3 w-3 text-[#ff8c00]" />
+                                            <Label className="text-[10px] uppercase tracking-widest text-[#ff8c00] font-bold">Auto-Summary Window (Reporting Cycle)</Label>
+                                        </div>
+                                        <div className="grid md:grid-cols-4 gap-4">
+                                            {['weekly', 'bi-weekly', 'monthly', 'daily'].map((cycle) => (
+                                                <div
+                                                    key={cycle}
+                                                    onClick={() => setRadarCycle(cycle)}
+                                                    className={cn(
+                                                        "relative p-4 cursor-pointer border transition-all rounded-sm",
+                                                        radarCycle === cycle
+                                                            ? "bg-[#ff8c00]/10 border-[#ff8c00] shadow-[0_0_15px_rgba(255,140,0,0.1)]"
+                                                            : "bg-white/[0.02] border-white/10 hover:border-white/20",
+                                                        cycle === 'daily' && "border-dashed"
+                                                    )}
+                                                >
+                                                    <p className={cn(
+                                                        "text-[10px] uppercase font-bold tracking-widest text-center",
+                                                        radarCycle === cycle ? "text-[#ff8c00]" : "text-white/40"
+                                                    )}>
+                                                        {cycle.replace('-', ' ')}
+                                                    </p>
+                                                    {cycle === 'daily' && (
+                                                        <div className="absolute -top-2 -right-2 bg-[#ff8c00] text-black text-[7px] font-black px-1.5 py-0.5 rounded-full shadow-lg pulse">
+                                                            PREMIUM
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            ))}
+                                        </div>
+                                        <input type="hidden" name="radarCycle" value={radarCycle} />
+
+                                        {radarCycle === 'daily' && (
+                                            <Alert className="bg-[#ff8c00]/5 border-[#ff8c00]/20 animate-pulse">
+                                                <Bot className="h-4 w-4 text-[#ff8c00]" />
+                                                <AlertTitle className="text-[#ff8c00] uppercase tracking-widest text-[10px] font-bold">Premium Protocol</AlertTitle>
+                                                <AlertDescription className="text-white/60 text-[10px] italic">
+                                                    Günlük raporlar yüksek sunucu kaynağı gerektirir. Eğer mevcut paketiniz uygun değilse, sistem otomatik olarak "Haftalık" raporlamaya geri dönecektir.
+                                                </AlertDescription>
+                                            </Alert>
+                                        )}
+                                    </div>
                                 </CardContent>
                             </Card>
                         </TabsContent>
